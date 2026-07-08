@@ -263,7 +263,8 @@ runs:
       shell: bash
       run: |
         VERSION=${{ inputs.assert-version }}
-        url="https://api.github.com/repos/bats-core/bats-assert/tarball/v${VERSION}"
+        # url="https://api.github.com/repos/bats-core/bats-assert/tarball/v${VERSION}"
+        url="https://api.github.com/repos/Wuodan/bats-assert/tarball/v${VERSION}"
         TEMPDIR="${TEMPDIR}/bats-assert"
         DESTDIR=${ASSERT_DESTDIR}
 
