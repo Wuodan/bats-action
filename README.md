@@ -38,7 +38,7 @@ You can use it like the below example and load the libraries in your tests with:
 
 ```bash
 _tests_helper() {
-    export BATS_LIB_PATH=${BATS_LIB_PATH:-"/usr/lib"}
+    export BATS_LIB_PATH="${BATS_LIB_PATH:?BATS_LIB_PATH must be set by bats-action}"
     bats_load_library bats-support
     bats_load_library bats-assert
     bats_load_library bats-file
@@ -48,7 +48,9 @@ _tests_helper() {
 
 ## Libraries Path
 
-For each of the Bats libraries, you can choose to install them in the default location (`/usr/lib/bats-<lib-name>` for linux) or specify a custom path.
+For each of the Bats libraries, you can choose to install them in the default location or specify a custom path.
+
+On Linux and macOS, the action now prefers the system library location only when the runner user can write there. Otherwise it falls back to `$HOME/.local/share/bats`, which avoids noisy cache restore failures on hosted runners.
 
 For example, if you want to install `bats-support` in the `./test/bats-support` directory, you can configure it as follows:
 
@@ -82,9 +84,11 @@ If you don't have a token (for example, because you're using this action in a no
 
 ## About Caching
 
-The caching mechanism for the `bats binary` is always available. However, the caching for the `bats libraries` is dependent on the location of each library path. If a library is located within the $HOME directory, caching is supported. Conversely, if a library is located outside the $HOME directory (which is the default location per each library), caching is not supported. This is due to a known limitation with sudo and the cache action, as detailed in this GitHub issue: https://github.com/actions/toolkit/issues/946.
+The caching mechanism for the `bats` binary is always available. Library caching works best when the library destination is writable by the runner user. With the default configuration on hosted runners, the action falls back to `$HOME/.local/share/bats`, so cache restore works without permission warnings.
 
-**If you want to cache bats libraries you must install them inside HOME directory**.
+If you explicitly point a library at a privileged path such as `/usr/lib/...`, cache restore may still hit permission warnings because `actions/cache` restores as the runner user before the install step runs.
+
+**If you want reliable caching for bats libraries, install them inside the HOME directory**.
 For instance this is an example that will use the github workspace handle (works for linux/win/mac):
 
 ```yaml
@@ -102,10 +106,11 @@ For instance this is an example that will use the github workspace handle (works
 
 ## Windows and macos support
 
-* Macos is fully supported for both default path and custom home path, just be aware that under `/usr` only `/usr/local/` is writable,
-the rest is read only (you may consider to use an home path leverage the cache).
-  * default libraries installation: `/usr/local/lib`
+* Macos is fully supported for both default path and custom home path. The action uses `/usr/local/lib` when it is writable, otherwise it falls back to `$HOME/.local/share/bats`.
+  * default libraries installation: `/usr/local/lib` or `$HOME/.local/share/bats`
   * default temp directory (for dev testing): `/tmp`
+* Linux uses `/usr/lib` when it is writable, otherwise it falls back to `$HOME/.local/share/bats`.
+  * default libraries installation: `/usr/lib` or `$HOME/.local/share/bats`
 * Windows is fully supported as well, however they may be some hiccup around the libraries installation in another drive that is not `C:`.
 Please report any issue.
   * default libraries installation: `/c/Users/runneradmin`

@@ -171,21 +171,20 @@ runs:
       run: |
         if [[ "$RUNNER_OS" == "macOS" ]]; then
           DEFAULT_BASE_DIR="/usr/local/lib"
-          [[ "${DEFAULT_BASE_DIR}" == "$HOME"* ]] && CMD="" || CMD="sudo"
+          [[ ! -w "${DEFAULT_BASE_DIR}" ]] && DEFAULT_BASE_DIR="$HOME/.local/share/bats"
           TEMPDIR="/tmp"
         elif [[ "$RUNNER_OS" == "Windows" ]]; then
           DEFAULT_BASE_DIR="/c/Users/runneradmin"
-          CMD=""
+          [[ ! -w "${DEFAULT_BASE_DIR}" ]] && DEFAULT_BASE_DIR="$HOME/.local/share/bats"
           TEMPDIR="$HOME/AppData/Local/Temp"
         else
           DEFAULT_BASE_DIR="/usr/lib"
-          [[ "${DEFAULT_BASE_DIR}" == "$HOME"* ]] && CMD="" || CMD="sudo"
+          [[ ! -w "${DEFAULT_BASE_DIR}" ]] && DEFAULT_BASE_DIR="$HOME/.local/share/bats"
           TEMPDIR="/tmp"
         fi
 
         echo "_LIB_PATH=$DEFAULT_BASE_DIR" >> /tmp/bats-lib-path
         echo "DEFAULT_BASE_DIR=$DEFAULT_BASE_DIR" >> $GITHUB_ENV
-        echo "CMD=$CMD" >> $GITHUB_ENV
         echo "TEMPDIR=$TEMPDIR" >> $GITHUB_ENV
         echo "tmp-path=$TEMPDIR" >> $GITHUB_OUTPUT
 
@@ -224,12 +223,12 @@ runs:
         fi
 
         mkdir -p ${TEMPDIR}
-        ${CMD} mkdir -p ${DESTDIR}/src/
+        mkdir -p ${DESTDIR}/src/
         curl -sL --retry 4 --retry-connrefused "${AUTH_ARGS[@]}" "${url}" | tar xz -C ${TEMPDIR} --strip-components 1 && cd ${TEMPDIR}
         # Archlinux style, except that we are not in a fakeroot env
-        ${CMD} install -m755 load.bash ${DESTDIR}/load.bash
+        install -m755 load.bash ${DESTDIR}/load.bash
         for fn in src/*.bash; do
-          ${CMD} install -m755 $fn \
+          install -m755 $fn \
              ${DESTDIR}/src/$(basename $fn)
         done
         echo "Bats Support v$VERSION installed in $DESTDIR"
@@ -274,12 +273,12 @@ runs:
         fi
 
         mkdir -p ${TEMPDIR}
-        ${CMD} mkdir -p ${DESTDIR}/src/
+        mkdir -p ${DESTDIR}/src/
         curl -sL --retry 4 --retry-connrefused "${AUTH_ARGS[@]}" "${url}" | tar xz -C ${TEMPDIR} --strip-components 1 && cd ${TEMPDIR}
         # Archlinux style, except that we are not in a fakeroot env
-        ${CMD} install -m755 load.bash ${DESTDIR}/load.bash
+        install -m755 load.bash ${DESTDIR}/load.bash
         for fn in src/*.bash; do
-          ${CMD} install -m755 $fn \
+          install -m755 $fn \
              ${DESTDIR}/src/$(basename $fn)
         done
         echo "Bats Assert v$VERSION installed in $DESTDIR"
@@ -323,11 +322,11 @@ runs:
         fi
 
         mkdir -p ${TEMPDIR}
-        ${CMD} mkdir -p ${DESTDIR}/src/
+        mkdir -p ${DESTDIR}/src/
         curl -sL --retry 4 --retry-connrefused "${AUTH_ARGS[@]}" "${url}" | tar xz -C ${TEMPDIR} --strip-components 1 && cd ${TEMPDIR}
-        # Archlinux style, except that we are not in a fakeroot env so we need to use sudo
+        # Install directly into a writable destination chosen earlier.
         for fn in lib/*.bash; do
-          ${CMD} install -m755 $fn \
+          install -m755 $fn \
              ${DESTDIR}/$(basename $fn)
         done
         echo "Bats Detik v$VERSION installed in $DESTDIR"
@@ -371,12 +370,12 @@ runs:
         fi
 
         mkdir -p ${TEMPDIR}
-        ${CMD} mkdir -p ${DESTDIR}/src/
+        mkdir -p ${DESTDIR}/src/
         curl -sL --retry 4 --retry-connrefused "${AUTH_ARGS[@]}" "${url}" | tar xz -C ${TEMPDIR} --strip-components 1 && cd ${TEMPDIR}
         # Archlinux style, except that we are not in a fakeroot env
-        ${CMD} install -m755 load.bash ${DESTDIR}/load.bash
+        install -m755 load.bash ${DESTDIR}/load.bash
         for fn in src/*.bash; do
-          ${CMD} install -m755 $fn \
+          install -m755 $fn \
              ${DESTDIR}/src/$(basename $fn)
         done
         echo "Bats File v$VERSION installed in $DESTDIR"
