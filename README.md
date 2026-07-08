@@ -48,7 +48,7 @@ _tests_helper() {
 
 ## Libraries Path
 
-For each of the Bats libraries, you can choose to install them in the default location (`/usr/lib/bats-<lib-name>` for linux) or specify a custom path.
+For each of the Bats libraries, you can choose to install them in the default location or specify a custom path.
 
 For example, if you want to install `bats-support` in the `./test/bats-support` directory, you can configure it as follows:
 
@@ -82,10 +82,9 @@ If you don't have a token (for example, because you're using this action in a no
 
 ## About Caching
 
-The caching mechanism for the `bats binary` is always available. However, the caching for the `bats libraries` is dependent on the location of each library path. If a library is located within the $HOME directory, caching is supported. Conversely, if a library is located outside the $HOME directory (which is the default location per each library), caching is not supported. This is due to a known limitation with sudo and the cache action, as detailed in this GitHub issue: https://github.com/actions/toolkit/issues/946.
+The caching mechanism for the `bats` binary is always available. Bats libraries are cached as well when they are installed in a writable location.
 
-**If you want to cache bats libraries you must install them inside HOME directory**.
-For instance this is an example that will use the github workspace handle (works for linux/win/mac):
+If you want to choose the library locations explicitly, for instance inside the github workspace handle (works for linux/win/mac):
 
 ```yaml
       [...]
@@ -102,10 +101,11 @@ For instance this is an example that will use the github workspace handle (works
 
 ## Windows and macos support
 
-* Macos is fully supported for both default path and custom home path, just be aware that under `/usr` only `/usr/local/` is writable,
-the rest is read only (you may consider to use an home path leverage the cache).
-  * default libraries installation: `/usr/local/lib`
+* Macos is fully supported for both default path and custom home path.
+  * default libraries installation: `/usr/local/lib` or `$HOME/.local/share/bats`
   * default temp directory (for dev testing): `/tmp`
+* Linux:
+  * default libraries installation: `/usr/lib` or `$HOME/.local/share/bats`
 * Windows is fully supported as well, however they may be some hiccup around the libraries installation in another drive that is not `C:`.
 Please report any issue.
   * default libraries installation: `/c/Users/runneradmin`
