@@ -9,7 +9,7 @@ inputs:
   bats-install:
     description: "Bats installation, default to true"
     required: false
-    default: true
+    default: "true"
   bats-version:
     description: "Bats version, default to latest (1.11.0 atm)"
     required: false
@@ -17,7 +17,7 @@ inputs:
   support-install:
     description: "Bats-support installation, default to true"
     required: false
-    default: true
+    default: "true"
   support-version:
     description: "Bats-support version, default to latest"
     required: false
@@ -29,12 +29,12 @@ inputs:
   support-clean:
     description: "Bats-support: clean temp files"
     required: false
-    default: true
+    default: "true"
   # assert
   assert-install:
     description: "Bats-assert installation, default to true"
     required: false
-    default: true
+    default: "true"
   assert-version:
     description: "Bats-assert version, default to latest"
     required: false
@@ -46,12 +46,12 @@ inputs:
   assert-clean:
     description: "Bats-assert: clean temp files"
     required: false
-    default: true
+    default: "true"
   # detik
   detik-install:
     description: "Bats-detik installation, default to true"
     required: false
-    default: true
+    default: "true"
   detik-version:
     description: "Bats-detik version, default to latest"
     required: false
@@ -63,12 +63,12 @@ inputs:
   detik-clean:
     description: "Bats-detik: clean temp files"
     required: false
-    default: true
+    default: "true"
   # file
   file-install:
     description: "Bats-file installation, default to true"
     required: false
-    default: true
+    default: "true"
   file-version:
     description: "Bats-file version, default to latest"
     required: false
@@ -80,7 +80,7 @@ inputs:
   file-clean:
     description: "Bats-file: clean temp files"
     required: false
-    default: true
+    default: "true"
   github-token:
     description: "GitHub token to use to download the releases"
     required: false
