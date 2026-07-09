@@ -17,6 +17,12 @@ inputs:
 runs:
   using: composite
   steps:
+    - name: Resolve source root
+      id: source-root
+      shell: bash
+      run: |
+        echo "value=$(./.github/scripts/test-source-root.sh "${{ inputs.source-root }}")" >> "${GITHUB_OUTPUT}"
+
     - name: Read library version
       id: version
       shell: bash
@@ -30,7 +36,7 @@ runs:
 
     - name: Ensure source root exists
       shell: bash
-      run: mkdir -p "${{ inputs.source-root }}"
+      run: mkdir -p "${{ steps.source-root.outputs.value }}"
 
     - name: Cache test source
       id: cache
@@ -51,7 +57,7 @@ runs:
           auth_args=(-H "Authorization: token ${GITHUB_TOKEN}")
         fi
 
-        target_dir="${{ inputs.source-root }}/bats-${{ inputs.library }}"
+        target_dir="${{ steps.source-root.outputs.value }}/bats-${{ inputs.library }}"
         rm -rf "${target_dir}"
         mkdir -p "${target_dir}"
         curl -fsSL --retry 4 --retry-connrefused "${auth_args[@]}" \

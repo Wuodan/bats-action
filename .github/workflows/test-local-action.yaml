@@ -26,8 +26,10 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
+      - name: Resolve test source root
+        shell: bash
+        run: echo "TEST_SOURCE_ROOT=$(./.github/scripts/test-source-root.sh "${{ github.workspace }}/.bats-test-sources")" >> "${GITHUB_ENV}"
       - name: Prepare test source trees
-        id: test-sources
         uses: ./.github/actions/prepare-test-sources
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -45,7 +47,7 @@ jobs:
         env:
           BATS_LIB_PATH: ${{ steps.setup-bats.outputs.lib-path }}
         run: |
-          cd "${{ steps.test-sources.outputs.source-root }}/bats-support/"
+          cd "${TEST_SOURCE_ROOT}/bats-support/"
           echo $BATS_LIB_PATH
           bats test
       - name: Execute test to check  Bats-assert
@@ -53,7 +55,7 @@ jobs:
         env:
           BATS_LIB_PATH: ${{ steps.setup-bats.outputs.lib-path }}
         run: |
-          cd "${{ steps.test-sources.outputs.source-root }}/bats-assert/"
+          cd "${TEST_SOURCE_ROOT}/bats-assert/"
           bats test
       - name: Execute test to check Bats-detik
         shell: bash
@@ -61,7 +63,7 @@ jobs:
         env:
           BATS_LIB_PATH: ${{ steps.setup-bats.outputs.lib-path }}
         run: |
-          cd "${{ steps.test-sources.outputs.source-root }}/bats-detik/"
+          cd "${TEST_SOURCE_ROOT}/bats-detik/"
           bats tests
       - name: Execute test to check Bats-file
         shell: bash
@@ -71,7 +73,7 @@ jobs:
         env:
           BATS_LIB_PATH: ${{ steps.setup-bats.outputs.lib-path }}
         run: |
-          cd "${{ steps.test-sources.outputs.source-root }}/bats-file/"
+          cd "${TEST_SOURCE_ROOT}/bats-file/"
           bats test
       - name: Execute example tests
         env:
