@@ -111,6 +111,28 @@ outputs:
 runs:
   using: composite
   steps:
+    - name: "Resolve Bats release"
+      if: inputs.bats-install == 'true'
+      id: resolve-bats-release
+      shell: bash
+      run: |
+        VERSION="${{ inputs.bats-version }}"
+        URL="https://api.github.com"
+
+        declare -a AUTH_ARGS=()
+        if [ "$GITHUB_TOKEN" != "" ]; then
+          AUTH_ARGS=( -H "Authorization: token $GITHUB_TOKEN" )
+        fi
+
+        if [[ -z "$VERSION" ]] || [[ "$VERSION" = "latest" ]]; then
+          VERSION="$(curl -fsSL --retry 4 --retry-connrefused "${AUTH_ARGS[@]}" "${URL}/repos/bats-core/bats-core/releases/latest" | grep tag_name | cut -d '"' -f 4)"
+        fi
+        [[ $VERSION == v* ]] && VERSION="${VERSION:1}"
+
+        echo "version=${VERSION}" >> "$GITHUB_OUTPUT"
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+
     # This action would be much easier if only matrix steps will be supported in a composite action
     - name: "Set cache for Bats"
       uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v4
@@ -119,7 +141,7 @@ runs:
       with:
         path: |
           ~/.local/share/bats
-        key: ${{ runner.os }}-${{ runner.arch }}-bats-${{ inputs.bats-version }}
+        key: ${{ runner.os }}-${{ runner.arch }}-bats-${{ steps.resolve-bats-release.outputs.version }}
 
     - name: "Set PATH in case of cache-hit"
       if: inputs.bats-install == 'true' && steps.bats-cache.outputs.cache-hit == 'true'
@@ -135,7 +157,7 @@ runs:
       shell: bash
       run: |
         # In $HOME to avoid sudo requirements
-        VERSION=${{ inputs.bats-version }}
+        VERSION=${{ steps.resolve-bats-release.outputs.version }}
         DESTDIR="$HOME/.local/share/bats"
         TEMPDIR="/tmp/bats"
         URL="https://api.github.com"
@@ -144,12 +166,6 @@ runs:
         if [ "$GITHUB_TOKEN" != "" ]; then
           AUTH_ARGS=( -H "Authorization: token $GITHUB_TOKEN" )
         fi 
-
-        # From https://github.com/fluxcd/flux2/blob/44d69d6fc0c353e79c1bad021a4aca135033bce8/action/action.yml#L35
-        if [[ -z "$VERSION" ]] || [[ "$VERSION" = "latest" ]]; then
-          VERSION=$(curl -fsSL --retry 4 --retry-connrefused "${AUTH_ARGS[@]}" "${URL}/repos/bats-core/bats-core/releases/latest" | grep tag_name | cut -d '"' -f 4)
-        fi
-        [[ $VERSION == v* ]] && VERSION="${VERSION:1}"
 
         mkdir -p ${TEMPDIR}
         mkdir -p ${DESTDIR}
