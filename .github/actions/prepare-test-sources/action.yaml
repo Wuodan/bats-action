@@ -11,11 +11,6 @@ inputs:
     required: false
     default: ${{ github.workspace }}/.bats-test-sources
 
-outputs:
-  source-root:
-    description: Directory containing the cached upstream source trees
-    value: ${{ inputs.source-root }}
-
 runs:
   using: composite
   steps:
