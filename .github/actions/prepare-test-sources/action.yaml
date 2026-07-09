@@ -1,0 +1,54 @@
+name: Prepare test sources
+description: Cache and fetch upstream library source trees used by bats-action test workflows.
+
+inputs:
+  github-token:
+    description: GitHub token used for authenticated API requests
+    required: false
+    default: ""
+  source-root:
+    description: Directory where the source trees are cached and restored
+    required: false
+    default: ${{ github.workspace }}/.bats-test-sources
+
+outputs:
+  source-root:
+    description: Directory containing the cached upstream source trees
+    value: ${{ inputs.source-root }}
+
+runs:
+  using: composite
+  steps:
+    - name: Read test source versions
+      id: versions
+      shell: bash
+      run: |
+        support_version="$(yq -r '.inputs["support-version"].default' action.yaml)"
+        assert_version="$(yq -r '.inputs["assert-version"].default' action.yaml)"
+        detik_version="$(yq -r '.inputs["detik-version"].default' action.yaml)"
+        file_version="$(yq -r '.inputs["file-version"].default' action.yaml)"
+        {
+          echo "support-version=${support_version}"
+          echo "assert-version=${assert_version}"
+          echo "detik-version=${detik_version}"
+          echo "file-version=${file_version}"
+          echo "cache-key=support-${support_version}_assert-${assert_version}_detik-${detik_version}_file-${file_version}"
+        } >> "${GITHUB_OUTPUT}"
+
+    - name: Cache test source trees
+      id: cache
+      uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v4
+      with:
+        path: ${{ inputs.source-root }}
+        key: ${{ runner.os }}-${{ runner.arch }}-bats-test-sources-${{ steps.versions.outputs.cache-key }}
+
+    - name: Fetch test source trees
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        SUPPORT_VERSION: ${{ steps.versions.outputs.support-version }}
+        ASSERT_VERSION: ${{ steps.versions.outputs.assert-version }}
+        DETIK_VERSION: ${{ steps.versions.outputs.detik-version }}
+        FILE_VERSION: ${{ steps.versions.outputs.file-version }}
+      run: bash .github/scripts/fetch-test-sources.sh "${{ inputs.source-root }}"

@@ -26,6 +26,11 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
+      - name: Prepare test source trees
+        id: test-sources
+        uses: ./.github/actions/prepare-test-sources
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Setup Bats and Bats libs
         id: setup-bats
         uses: ./
@@ -39,27 +44,24 @@ jobs:
         shell: bash
         env:
           BATS_LIB_PATH: ${{ steps.setup-bats.outputs.lib-path }}
-          TMP_PATH: ${{ steps.setup-bats.outputs.tmp-path }}
         run: |
-          cd ${TMP_PATH}/bats-support/
+          cd "${{ steps.test-sources.outputs.source-root }}/bats-support/"
           echo $BATS_LIB_PATH
           bats test
       - name: Execute test to check  Bats-assert
         shell: bash
         env:
           BATS_LIB_PATH: ${{ steps.setup-bats.outputs.lib-path }}
-          TMP_PATH: ${{ steps.setup-bats.outputs.tmp-path }}
         run: |
-          cd ${TMP_PATH}/bats-assert/
+          cd "${{ steps.test-sources.outputs.source-root }}/bats-assert/"
           bats test
       - name: Execute test to check Bats-detik
         shell: bash
         continue-on-error: true
         env:
           BATS_LIB_PATH: ${{ steps.setup-bats.outputs.lib-path }}
-          TMP_PATH: ${{ steps.setup-bats.outputs.tmp-path }}
         run: |
-          cd ${TMP_PATH}/bats-detik/
+          cd "${{ steps.test-sources.outputs.source-root }}/bats-detik/"
           bats tests
       - name: Execute test to check Bats-file
         shell: bash
@@ -68,9 +70,8 @@ jobs:
         continue-on-error: true
         env:
           BATS_LIB_PATH: ${{ steps.setup-bats.outputs.lib-path }}
-          TMP_PATH: ${{ steps.setup-bats.outputs.tmp-path }}
         run: |
-          cd ${TMP_PATH}/bats-file/
+          cd "${{ steps.test-sources.outputs.source-root }}/bats-file/"
           bats test
       - name: Execute example tests
         env:
