@@ -8,6 +8,10 @@ on:
     branches: ["main"]
     tags: ["*"]
 
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}${{ github.event_name == 'release' && '-release' || '' }}
+  cancel-in-progress: true
+
 jobs:
   public_test:
     strategy:
