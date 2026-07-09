@@ -38,7 +38,7 @@ inputs:
   assert-version:
     description: "Bats-assert version, default to latest"
     required: false
-    default: "2.2.5-alpha01"
+    default: "2.1.0"
   assert-path:
     description: "Bats-assert path, default to /usr/lib/bats-assert"
     required: false
@@ -277,8 +277,7 @@ runs:
       shell: bash
       run: |
         VERSION=${{ inputs.assert-version }}
-        # url="https://api.github.com/repos/bats-core/bats-assert/tarball/v${VERSION}"
-        url="https://api.github.com/repos/Wuodan/bats-assert/tarball/v${VERSION}"
+        url="https://api.github.com/repos/bats-core/bats-assert/tarball/v${VERSION}"
         TEMPDIR="${TEMPDIR}/bats-assert"
         DESTDIR=${ASSERT_DESTDIR}
 
