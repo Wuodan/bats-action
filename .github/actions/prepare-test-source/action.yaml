@@ -21,7 +21,12 @@ runs:
       id: version
       shell: bash
       run: |
-        echo "value=$(yq -r ".inputs[\"${{ inputs.library }}-version\"].default" action.yaml)" >> "${GITHUB_OUTPUT}"
+        version="$(sed -n "/^  ${{ inputs.library }}-version:/,/^  [^ ]/ s/^    default: \"\\(.*\\)\"$/\\1/p" action.yaml | head -n 1)"
+        if [[ -z "${version}" ]]; then
+          echo "Failed to read default version for ${{ inputs.library }}" >&2
+          exit 1
+        fi
+        echo "value=${version}" >> "${GITHUB_OUTPUT}"
 
     - name: Ensure source root exists
       shell: bash
