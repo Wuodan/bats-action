@@ -1,0 +1,54 @@
+name: Prepare test source
+description: Cache and fetch one upstream library source tree used by bats-action test workflows.
+
+inputs:
+  github-token:
+    description: GitHub token used for authenticated API requests
+    required: false
+    default: ""
+  source-root:
+    description: Directory where the source tree is cached and restored
+    required: false
+    default: ${{ github.workspace }}/.bats-test-sources
+  library:
+    description: Library name
+    required: true
+
+runs:
+  using: composite
+  steps:
+    - name: Read library version
+      id: version
+      shell: bash
+      run: |
+        echo "value=$(yq -r ".inputs[\"${{ inputs.library }}-version\"].default" action.yaml)" >> "${GITHUB_OUTPUT}"
+
+    - name: Ensure source root exists
+      shell: bash
+      run: mkdir -p "${{ inputs.source-root }}"
+
+    - name: Cache test source
+      id: cache
+      uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v4
+      with:
+        path: ${{ inputs.source-root }}/bats-${{ inputs.library }}
+        key: ${{ runner.os }}-${{ runner.arch }}-bats-test-source-${{ inputs.library }}-${{ steps.version.outputs.value }}
+
+    - name: Fetch test source
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ inputs.github-token }}
+        REPO: bats-core/bats-${{ inputs.library }}
+      run: |
+        declare -a auth_args=()
+        if [[ -n "${GITHUB_TOKEN:-}" ]]; then
+          auth_args=(-H "Authorization: token ${GITHUB_TOKEN}")
+        fi
+
+        target_dir="${{ inputs.source-root }}/bats-${{ inputs.library }}"
+        rm -rf "${target_dir}"
+        mkdir -p "${target_dir}"
+        curl -fsSL --retry 4 --retry-connrefused "${auth_args[@]}" \
+          "https://api.github.com/repos/${REPO}/tarball/v${{ steps.version.outputs.value }}" \
+          | tar xz -C "${target_dir}" --strip-components 1
