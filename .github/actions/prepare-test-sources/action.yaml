@@ -19,62 +19,30 @@ outputs:
 runs:
   using: composite
   steps:
-    - name: Read test source versions
-      id: versions
-      shell: bash
-      run: |
-        support_version="$(yq -r '.inputs["support-version"].default' action.yaml)"
-        assert_version="$(yq -r '.inputs["assert-version"].default' action.yaml)"
-        detik_version="$(yq -r '.inputs["detik-version"].default' action.yaml)"
-        file_version="$(yq -r '.inputs["file-version"].default' action.yaml)"
-        {
-          echo "support-version=${support_version}"
-          echo "assert-version=${assert_version}"
-          echo "detik-version=${detik_version}"
-          echo "file-version=${file_version}"
-          echo "cache-key=support-${support_version}_assert-${assert_version}_detik-${detik_version}_file-${file_version}"
-        } >> "${GITHUB_OUTPUT}"
-
-    - name: Cache test source trees
-      id: cache
-      uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v4
+    - name: Prepare Bats-support test source
+      uses: ./.github/actions/prepare-test-source
       with:
-        path: ${{ inputs.source-root }}
-        key: ${{ runner.os }}-${{ runner.arch }}-bats-test-sources-${{ steps.versions.outputs.cache-key }}
+        github-token: ${{ inputs.github-token }}
+        source-root: ${{ inputs.source-root }}
+        library: support
 
-    - name: Fetch test source trees
-      if: steps.cache.outputs.cache-hit != 'true'
-      shell: bash
-      env:
-        GITHUB_TOKEN: ${{ inputs.github-token }}
-        SUPPORT_VERSION: ${{ steps.versions.outputs.support-version }}
-        ASSERT_VERSION: ${{ steps.versions.outputs.assert-version }}
-        DETIK_VERSION: ${{ steps.versions.outputs.detik-version }}
-        FILE_VERSION: ${{ steps.versions.outputs.file-version }}
-      run: |
-        target_root="${{ inputs.source-root }}"
-        api_url="https://api.github.com/repos"
+    - name: Prepare Bats-assert test source
+      uses: ./.github/actions/prepare-test-source
+      with:
+        github-token: ${{ inputs.github-token }}
+        source-root: ${{ inputs.source-root }}
+        library: assert
 
-        declare -a auth_args=()
-        if [[ -n "${GITHUB_TOKEN:-}" ]]; then
-          auth_args=(-H "Authorization: token ${GITHUB_TOKEN}")
-        fi
+    - name: Prepare Bats-detik test source
+      uses: ./.github/actions/prepare-test-source
+      with:
+        github-token: ${{ inputs.github-token }}
+        source-root: ${{ inputs.source-root }}
+        library: detik
 
-        fetch_repo() {
-          local repo="$1"
-          local version="$2"
-          local dest_dir="$3"
-
-          rm -rf "${dest_dir}"
-          mkdir -p "${dest_dir}"
-          curl -fsSL --retry 4 --retry-connrefused "${auth_args[@]}" \
-            "${api_url}/${repo}/tarball/v${version}" \
-            | tar xz -C "${dest_dir}" --strip-components 1
-        }
-
-        mkdir -p "${target_root}"
-
-        fetch_repo "bats-core/bats-support" "${SUPPORT_VERSION:?}" "${target_root}/bats-support"
-        fetch_repo "bats-core/bats-assert" "${ASSERT_VERSION:?}" "${target_root}/bats-assert"
-        fetch_repo "bats-core/bats-detik" "${DETIK_VERSION:?}" "${target_root}/bats-detik"
-        fetch_repo "bats-core/bats-file" "${FILE_VERSION:?}" "${target_root}/bats-file"
+    - name: Prepare Bats-file test source
+      uses: ./.github/actions/prepare-test-source
+      with:
+        github-token: ${{ inputs.github-token }}
+        source-root: ${{ inputs.source-root }}
+        library: file
