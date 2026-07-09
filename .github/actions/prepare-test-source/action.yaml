@@ -25,14 +25,9 @@ runs:
 
     - name: Read library version
       id: version
-      shell: bash
-      run: |
-        version="$(sed -n "/^  ${{ inputs.library }}-version:/,/^  [^ ]/ s/^    default: \"\\(.*\\)\"$/\\1/p" action.yaml | head -n 1)"
-        if [[ -z "${version}" ]]; then
-          echo "Failed to read default version for ${{ inputs.library }}" >&2
-          exit 1
-        fi
-        echo "value=${version}" >> "${GITHUB_OUTPUT}"
+      uses: mikefarah/yq@v4
+      with:
+        cmd: yq '.inputs.["${{ inputs.library }}-version"].default' action.yaml
 
     - name: Ensure source root exists
       shell: bash
@@ -43,7 +38,7 @@ runs:
       uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v4
       with:
         path: ${{ inputs.source-root }}/bats-${{ inputs.library }}
-        key: ${{ runner.os }}-${{ runner.arch }}-bats-test-source-${{ inputs.library }}-${{ steps.version.outputs.value }}
+        key: ${{ runner.os }}-${{ runner.arch }}-bats-test-source-${{ inputs.library }}-${{ steps.version.outputs.result }}
 
     - name: Fetch test source
       if: steps.cache.outputs.cache-hit != 'true'
@@ -61,5 +56,5 @@ runs:
         rm -rf "${target_dir}"
         mkdir -p "${target_dir}"
         curl -fsSL --retry 4 --retry-connrefused "${auth_args[@]}" \
-          "https://api.github.com/repos/${REPO}/tarball/v${{ steps.version.outputs.value }}" \
+          "https://api.github.com/repos/${REPO}/tarball/v${{ steps.version.outputs.result }}" \
           | tar xz -C "${target_dir}" --strip-components 1
