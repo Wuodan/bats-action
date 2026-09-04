@@ -27,6 +27,7 @@ runs:
         github-token: ${{ inputs.github-token }}
         source-root: ${{ inputs.source-root }}
         library: assert
+        repo: Wuodan/bats-assert
 
     - name: Prepare Bats-detik test source
       uses: ./.github/actions/prepare-test-source
