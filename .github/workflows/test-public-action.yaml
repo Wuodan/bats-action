@@ -36,6 +36,9 @@ jobs:
           assert-clean: "false"
           detik-clean: "false"
           file-clean: "false"
+          # This test workflow on purpose does not set github-token
+          # while all others do to avoid rate limits of anonmymous curl downloads from GitHub
+          # github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Execute test to check Bats-support
         shell: bash
         env:
@@ -103,6 +106,9 @@ jobs:
           assert-clean: "false"
           detik-clean: "false"
           file-clean: "false"
+          # This test workflow on purpose does not set github-token
+          # while all others do to avoid rate limits of anonmymous curl downloads from GitHub
+          # github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Execute example tests
         env:
           BATS_LIB_PATH: ${{ steps.setup-bats.outputs.lib-path }}
