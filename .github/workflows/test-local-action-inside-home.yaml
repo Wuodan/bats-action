@@ -46,6 +46,7 @@ jobs:
           detik-path: "${{ github.workspace }}/tests/bats-detik"
           file-clean: "false"
           file-path: "${{ github.workspace }}/tests/bats-file"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Execute test to check Bats-support
         if: steps.setup-bats.outputs.support-installed == 'true'
         shell: bash
@@ -119,6 +120,7 @@ jobs:
           detik-path: "${{ github.workspace }}/tests/bats-detik"
           file-clean: "false"
           file-path: "${{ github.workspace }}/tests/bats-file"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Execute example tests
         shell: bash
         env:
