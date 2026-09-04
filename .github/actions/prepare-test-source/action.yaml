@@ -13,6 +13,10 @@ inputs:
   library:
     description: Library name
     required: true
+  repo:
+    description: Repository to fetch from (defaults to bats-core/bats-<library>)
+    required: false
+    default: ""
 
 runs:
   using: composite
@@ -50,7 +54,7 @@ runs:
       shell: bash
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
-        REPO: bats-core/bats-${{ inputs.library }}
+        REPO: ${{ inputs.repo || format('bats-core/bats-{0}', inputs.library) }}
       run: |
         declare -a auth_args=()
         if [[ -n "${GITHUB_TOKEN:-}" ]]; then
