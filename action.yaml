@@ -121,14 +121,6 @@ runs:
           ~/.local/share/bats
         key: ${{ runner.os }}-${{ runner.arch }}-bats-${{ inputs.bats-version }}
 
-    - name: "Set PATH in case of cache-hit"
-      if: inputs.bats-install == 'true' && steps.bats-cache.outputs.cache-hit == 'true'
-      id: bats-cache-path
-      shell: bash
-      run: |
-        DESTDIR="$HOME/.local/share/bats"
-        echo "${DESTDIR}/bin" >> "$GITHUB_PATH"
-
     - name: "Download and install Bats"
       if: inputs.bats-install == 'true' && steps.bats-cache.outputs.cache-hit != 'true'
       id: bats-install
@@ -149,9 +141,16 @@ runs:
         echo "${DESTDIR}/bin" >> "$GITHUB_PATH"
         echo "bats-installed=true" >> $GITHUB_OUTPUT
 
-        rm -rf ${TEMPDIR} || exit 0
+        rm -rf ${TEMPDIR}
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
+
+    - name: "Set PATH"
+      if: inputs.bats-install == 'true'
+      shell: bash
+      run: |
+        DESTDIR="$HOME/.local/share/bats"
+        echo "${DESTDIR}/bin" >> "$GITHUB_PATH"
 
     - name: Set paths and commands for libraries
       shell: bash
@@ -163,7 +162,6 @@ runs:
           TEMPDIR="$(cygpath --unix "$TEMPDIR")"
         fi
 
-        echo "_LIB_PATH=$DEFAULT_BASE_DIR" >> /tmp/bats-lib-path
         echo "DEFAULT_BASE_DIR=$DEFAULT_BASE_DIR" >> $GITHUB_ENV
         echo "CMD=$CMD" >> $GITHUB_ENV
         echo "TEMPDIR=$TEMPDIR" >> $GITHUB_ENV
@@ -210,7 +208,8 @@ runs:
         done
         echo "Bats Support v$VERSION installed in $DESTDIR"
         echo "support-installed=true" >> $GITHUB_OUTPUT
-        [[ "${{ inputs.support-clean }}" == "true"  ]] && rm -rf ${TEMPDIR} || exit 0
+
+        [[ "${{ inputs.support-clean }}" != "true"  ]] || rm -rf ${TEMPDIR}
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
 
@@ -255,7 +254,8 @@ runs:
         done
         echo "Bats Assert v$VERSION installed in $DESTDIR"
         echo "assert-installed=true" >> "$GITHUB_OUTPUT"
-        [[ "${{ inputs.assert-clean }}" == "true"  ]] && rm -rf ${TEMPDIR} || exit 0
+
+        [[ "${{ inputs.assert-clean }}" != "true"  ]] || rm -rf ${TEMPDIR}
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
 
@@ -299,7 +299,8 @@ runs:
         done
         echo "Bats Detik v$VERSION installed in $DESTDIR"
         echo "detik-installed=true" >> $GITHUB_OUTPUT
-        [[ "${{ inputs.detik-clean }}" == "true"  ]] && rm -rf ${TEMPDIR} || exit 0
+
+        [[ "${{ inputs.detik-clean }}" != "true"  ]] || rm -rf ${TEMPDIR}
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
 
@@ -344,7 +345,8 @@ runs:
         done
         echo "Bats File v$VERSION installed in $DESTDIR"
         echo "file-installed=true" >> $GITHUB_OUTPUT
-        [[ "${{ inputs.file-clean }}" == "true"  ]] && rm -rf ${TEMPDIR} || exit 0
+
+        [[ "${{ inputs.file-clean }}" != "true"  ]] || rm -rf ${TEMPDIR}
       env:
         GITHUB_TOKEN: ${{ inputs.github-token }}
 
