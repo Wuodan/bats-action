@@ -138,26 +138,14 @@ runs:
         VERSION=${{ inputs.bats-version }}
         DESTDIR="$HOME/.local/share/bats"
         TEMPDIR="/tmp/bats"
-        URL="https://api.github.com"
 
-        declare -a AUTH_ARGS=()
-        if [ "$GITHUB_TOKEN" != "" ]; then
-          AUTH_ARGS=( -H "Authorization: token $GITHUB_TOKEN" )
-        fi 
+        # download tarball to the temp dir
+        ./download-bats-lib.sh  'bats-core/bats-core'  "$VERSION"  "$TEMPDIR"
 
-        # From https://github.com/fluxcd/flux2/blob/44d69d6fc0c353e79c1bad021a4aca135033bce8/action/action.yml#L35
-        if [[ -z "$VERSION" ]] || [[ "$VERSION" = "latest" ]]; then
-          VERSION=$(curl -fsSL --retry 4 --retry-connrefused "${AUTH_ARGS[@]}" "${URL}/repos/bats-core/bats-core/releases/latest" | grep tag_name | cut -d '"' -f 4)
-        fi
-        [[ $VERSION == v* ]] && VERSION="${VERSION:1}"
-
-        mkdir -p ${TEMPDIR}
+        cd ${TEMPDIR}
         mkdir -p ${DESTDIR}
-
-        curl -sL --retry 4 --retry-connrefused "${AUTH_ARGS[@]}" "${URL}/repos/bats-core/bats-core/tarball/v${VERSION}" | tar xz -C ${TEMPDIR} --strip-components 1 && cd ${TEMPDIR}
-
         ./install.sh ${DESTDIR}
-        echo "Bats v${VERSION} installed in ${DESTDIR}"
+        echo "Bats v${VERSION} installed in $DESTDIR"
         echo "${DESTDIR}/bin" >> "$GITHUB_PATH"
         echo "bats-installed=true" >> $GITHUB_OUTPUT
 
@@ -214,18 +202,14 @@ runs:
       shell: bash
       run: |
         VERSION=${{ inputs.support-version }}
-        url="https://api.github.com/repos/bats-core/bats-support/tarball/v${VERSION}"
         TEMPDIR="${TEMPDIR}/bats-support"
         DESTDIR=${SUPPORT_DESTDIR}
 
-        declare -a AUTH_ARGS=()
-        if [ "$GITHUB_TOKEN" != "" ]; then
-          AUTH_ARGS=( -H "Authorization: token $GITHUB_TOKEN" )
-        fi
-
-        mkdir -p ${TEMPDIR}
+        # download tarball to the temp dir
+        ./download-bats-lib.sh  'bats-core/bats-support'  "$VERSION"  "$TEMPDIR"
+        
+        cd ${TEMPDIR}
         ${CMD} mkdir -p ${DESTDIR}/src/
-        curl -sL --retry 4 --retry-connrefused "${AUTH_ARGS[@]}" "${url}" | tar xz -C ${TEMPDIR} --strip-components 1 && cd ${TEMPDIR}
         # Archlinux style, except that we are not in a fakeroot env
         ${CMD} install -m755 load.bash ${DESTDIR}/load.bash
         for fn in src/*.bash; do
@@ -263,18 +247,14 @@ runs:
       shell: bash
       run: |
         VERSION=${{ inputs.assert-version }}
-        url="https://api.github.com/repos/bats-core/bats-assert/tarball/v${VERSION}"
         TEMPDIR="${TEMPDIR}/bats-assert"
         DESTDIR=${ASSERT_DESTDIR}
 
-        declare -a AUTH_ARGS=()
-        if [ "$GITHUB_TOKEN" != "" ]; then
-          AUTH_ARGS=( -H "Authorization: token $GITHUB_TOKEN" )
-        fi
-
-        mkdir -p ${TEMPDIR}
+        # download tarball to the temp dir
+        ./download-bats-lib.sh  'bats-core/bats-assert'  "$VERSION"  "$TEMPDIR"
+        
+        cd ${TEMPDIR}
         ${CMD} mkdir -p ${DESTDIR}/src/
-        curl -sL --retry 4 --retry-connrefused "${AUTH_ARGS[@]}" "${url}" | tar xz -C ${TEMPDIR} --strip-components 1 && cd ${TEMPDIR}
         # Archlinux style, except that we are not in a fakeroot env
         ${CMD} install -m755 load.bash ${DESTDIR}/load.bash
         for fn in src/*.bash; do
@@ -312,18 +292,14 @@ runs:
       shell: bash
       run: |
         VERSION=${{ inputs.detik-version }}
-        url="https://api.github.com/repos/bats-core/bats-detik/tarball/v${VERSION}"
         TEMPDIR="${TEMPDIR}/bats-detik"
         DESTDIR="${DETIK_DESTDIR}"
 
-        declare -a AUTH_ARGS=()
-        if [ "$GITHUB_TOKEN" != "" ]; then
-          AUTH_ARGS=( -H "Authorization: token $GITHUB_TOKEN" )
-        fi
-
-        mkdir -p ${TEMPDIR}
+        # download tarball to the temp dir
+        ./download-bats-lib.sh  'bats-core/bats-detik'  "$VERSION"  "$TEMPDIR"
+        
+        cd ${TEMPDIR}
         ${CMD} mkdir -p ${DESTDIR}/src/
-        curl -sL --retry 4 --retry-connrefused "${AUTH_ARGS[@]}" "${url}" | tar xz -C ${TEMPDIR} --strip-components 1 && cd ${TEMPDIR}
         # Archlinux style, except that we are not in a fakeroot env so we need to use sudo
         for fn in lib/*.bash; do
           ${CMD} install -m755 $fn \
@@ -360,18 +336,14 @@ runs:
       shell: bash
       run: |
         VERSION=${{ inputs.file-version }}
-        url="https://api.github.com/repos/bats-core/bats-file/tarball/v${VERSION}"
         TEMPDIR="${TEMPDIR}/bats-file"
         DESTDIR="${FILE_DESTDIR}"
 
-        declare -a AUTH_ARGS=()
-        if [ "$GITHUB_TOKEN" != "" ]; then
-          AUTH_ARGS=( -H "Authorization: token $GITHUB_TOKEN" )
-        fi
-
-        mkdir -p ${TEMPDIR}
+        # download tarball to the temp dir
+        ./download-bats-lib.sh  'bats-core/bats-file'  "$VERSION"  "$TEMPDIR"
+        
+        cd ${TEMPDIR}
         ${CMD} mkdir -p ${DESTDIR}/src/
-        curl -sL --retry 4 --retry-connrefused "${AUTH_ARGS[@]}" "${url}" | tar xz -C ${TEMPDIR} --strip-components 1 && cd ${TEMPDIR}
         # Archlinux style, except that we are not in a fakeroot env
         ${CMD} install -m755 load.bash ${DESTDIR}/load.bash
         for fn in src/*.bash; do
