@@ -157,18 +157,17 @@ runs:
       shell: bash
       id: set-paths
       run: |
+        TEMPDIR="$RUNNER_TEMP"
         if [[ "$RUNNER_OS" == "macOS" ]]; then
           DEFAULT_BASE_DIR="/usr/local/lib"
           [[ "${DEFAULT_BASE_DIR}" == "$HOME"* ]] && CMD="" || CMD="sudo"
-          TEMPDIR="/tmp"
         elif [[ "$RUNNER_OS" == "Windows" ]]; then
           DEFAULT_BASE_DIR="/c/Users/runneradmin"
           CMD=""
-          TEMPDIR="$HOME/AppData/Local/Temp"
+          TEMPDIR="$(cygpath --unix "$TEMPDIR")"
         else
           DEFAULT_BASE_DIR="/usr/lib"
           [[ "${DEFAULT_BASE_DIR}" == "$HOME"* ]] && CMD="" || CMD="sudo"
-          TEMPDIR="/tmp"
         fi
 
         echo "_LIB_PATH=$DEFAULT_BASE_DIR" >> /tmp/bats-lib-path
