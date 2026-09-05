@@ -23,9 +23,9 @@ inputs:
     required: false
     default: "0.3.0"
   support-path:
-    description: "Bats-support path, default to $HOME/.local/share/bats/bats-support"
+    description: "Bats-support path, default to /usr/lib/bats-support"
     required: false
-    default: "$HOME/.local/share/bats/bats-support"
+    default: "/usr/lib/bats-support"
   support-clean:
     description: "Bats-support: clean temp files"
     required: false
@@ -40,9 +40,9 @@ inputs:
     required: false
     default: "latest"
   assert-path:
-    description: "Bats-assert path, default to $HOME/.local/share/bats/bats-assert"
+    description: "Bats-assert path, default to /usr/lib/bats-assert"
     required: false
-    default: "$HOME/.local/share/bats/bats-assert"
+    default: "/usr/lib/bats-assert"
   assert-clean:
     description: "Bats-assert: clean temp files"
     required: false
@@ -57,9 +57,9 @@ inputs:
     required: false
     default: "1.3.2"
   detik-path:
-    description: "Bats-detik path, default to $HOME/.local/share/bats/bats-detik"
+    description: "Bats-detik path, default to /usr/lib/bats-detik"
     required: false
-    default: "$HOME/.local/share/bats/bats-detik"
+    default: "/usr/lib/bats-detik"
   detik-clean:
     description: "Bats-detik: clean temp files"
     required: false
@@ -74,9 +74,9 @@ inputs:
     required: false
     default: "0.4.0"
   file-path:
-    description: "Bats-file path, default to $HOME/.local/share/bats/bats-file"
+    description: "Bats-file path, default to /usr/lib/bats-file"
     required: false
-    default: "$HOME/.local/share/bats/bats-file"
+    default: "/usr/lib/bats-file"
   file-clean:
     description: "Bats-file: clean temp files"
     required: false
@@ -157,13 +157,17 @@ runs:
       shell: bash
       id: set-paths
       run: |
-        DEFAULT_BASE_DIR="$HOME/.local/share/bats"
-
         if [[ "$RUNNER_OS" == "macOS" ]]; then
+          DEFAULT_BASE_DIR="/usr/local/lib"
+          [[ "${DEFAULT_BASE_DIR}" == "$HOME"* ]] && CMD="" || CMD="sudo"
           TEMPDIR="/tmp"
         elif [[ "$RUNNER_OS" == "Windows" ]]; then
+          DEFAULT_BASE_DIR="/c/Users/runneradmin"
+          CMD=""
           TEMPDIR="$HOME/AppData/Local/Temp"
         else
+          DEFAULT_BASE_DIR="/usr/lib"
+          [[ "${DEFAULT_BASE_DIR}" == "$HOME"* ]] && CMD="" || CMD="sudo"
           TEMPDIR="/tmp"
         fi
 
