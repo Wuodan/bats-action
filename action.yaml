@@ -38,7 +38,7 @@ inputs:
   assert-version:
     description: "Bats-assert version, default to latest"
     required: false
-    default: "2.2.4"
+    default: "latest"
   assert-path:
     description: "Bats-assert path, default to /usr/lib/bats-assert"
     required: false
