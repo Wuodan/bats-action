@@ -31,108 +31,112 @@ jobs:
         uses: ./
         with:
           bats-version: ${{ matrix.version }}
-          support-clean: "false"
-          assert-clean: "false"
-          detik-clean: "false"
-          file-clean: "false"
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: "Set path env vars"
+        shell: bash
+        run: |
+          set -eu
+          BATS_LIB_PATH="$HOME/.local/share/bats"
+          TEMPDIR="$RUNNER_TEMP/bats"
+          if [[ "$RUNNER_OS" == "Windows" ]]; then
+          TEMPDIR="$(cygpath --unix "$TEMPDIR")"
+          fi
+          (
+            echo "BATS_LIB_PATH=$BATS_LIB_PATH"
+            echo "TEMPDIR=$TEMPDIR"
+          ) >> $GITHUB_ENV
 
       - name: Check bats libs source path
         shell: bash
-        env:
-          TMP_PATH: ${{ steps.setup-bats.outputs.tmp-path }}
         run: |
           set -eu
-          [[ -d "${TMP_PATH}/bats-support" ]] || echo "DOWNLOAD_BATS_SUPPORT=1">>${GITHUB_ENV}
-          [[ -d "${TMP_PATH}/bats-assert" ]] || echo "DOWNLOAD_BATS_ASSERT=1">>${GITHUB_ENV}
-          [[ -d "${TMP_PATH}/bats-detik" ]] || echo "DOWNLOAD_BATS_DETIK=1">>${GITHUB_ENV}
-          [[ -d "${TMP_PATH}/bats-file" ]] || echo "DOWNLOAD_BATS_FILE=1">>${GITHUB_ENV}
+          [[ -d "${TEMPDIR}/bats-support" ]] || echo "DOWNLOAD_BATS_SUPPORT=1">>${GITHUB_ENV}
+          [[ -d "${TEMPDIR}/bats-assert" ]] || echo "DOWNLOAD_BATS_ASSERT=1">>${GITHUB_ENV}
+          [[ -d "${TEMPDIR}/bats-detik" ]] || echo "DOWNLOAD_BATS_DETIK=1">>${GITHUB_ENV}
+          [[ -d "${TEMPDIR}/bats-file" ]] || echo "DOWNLOAD_BATS_FILE=1">>${GITHUB_ENV}
       - name: Set cache for Bats-support source
         if: env.DOWNLOAD_BATS_SUPPORT == '1'
         uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v4
         id: support-source-cache
         with:
           path: ${{ steps.setup-bats.outputs.tmp-path }}/bats-support
-          key: ${{ runner.os }}-${{ runner.arch }}-bats-support-${{ env.SUPPORT_VERSION }}-source
+          key: ${{ runner.os }}-${{ runner.arch }}-bats-support-${{ steps.setup-bats.outputs.support-version }}-source
       - name: Download Bats-support source
         if: env.DOWNLOAD_BATS_SUPPORT == '1' && steps.support-source-cache.outputs.cache-hit != 'true'
         shell: bash
         env:
-          VERSION: latest
-          TARGET_DIR: ${{ steps.setup-bats.outputs.tmp-path }}/bats-support
+          VERSION: ${{ steps.setup-bats.outputs.support-version }}
+          TEMPDIR: ${{ env.TEMPDIR }}/bats-support
         run: |
-          ./download-bats-lib.sh  'bats-core/bats-support'  "$VERSION"  "$TARGET_DIR"
+          ./download-bats-lib.sh  'bats-core/bats-support'  "$VERSION"  "$TEMPDIR"
       - name: Set cache for Bats-assert source
         if: env.DOWNLOAD_BATS_ASSERT == '1'
         uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v4
         id: assert-source-cache
         with:
           path: ${{ steps.setup-bats.outputs.tmp-path }}/bats-assert
-          key: ${{ runner.os }}-${{ runner.arch }}-bats-assert-${{ env.ASSERT_VERSION }}-source
+          key: ${{ runner.os }}-${{ runner.arch }}-bats-assert-${{ steps.setup-bats.outputs.assert-version }}-source
       - name: Download Bats-assert source
         if: env.DOWNLOAD_BATS_ASSERT == '1' && steps.assert-source-cache.outputs.cache-hit != 'true'
         shell: bash
         env:
-          VERSION: latest
-          TARGET_DIR: ${{ steps.setup-bats.outputs.tmp-path }}/bats-assert
+          VERSION: ${{ steps.setup-bats.outputs.assert-version }}
+          TEMPDIR: ${{ env.TEMPDIR }}/bats-assert
         run: |
-          ./download-bats-lib.sh  'bats-core/bats-assert'  "$VERSION"  "$TARGET_DIR"
+          ./download-bats-lib.sh  'bats-core/bats-assert'  "$VERSION"  "$TEMPDIR"
       - name: Set cache for Bats-detik source
         if: env.DOWNLOAD_BATS_DETIK == '1'
         uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v4
         id: detik-source-cache
         with:
           path: ${{ steps.setup-bats.outputs.tmp-path }}/bats-detik
-          key: ${{ runner.os }}-${{ runner.arch }}-bats-detik-${{ env.DETIK_VERSION }}-source
+          key: ${{ runner.os }}-${{ runner.arch }}-bats-detik-${{ steps.setup-bats.outputs.detik-version }}-source
       - name: Download Bats-detik source
         if: env.DOWNLOAD_BATS_DETIK == '1' && steps.detik-source-cache.outputs.cache-hit != 'true'
         shell: bash
         env:
-          VERSION: latest
-          TARGET_DIR: ${{ steps.setup-bats.outputs.tmp-path }}/bats-detik
+          VERSION: ${{ steps.setup-bats.outputs.detik-version }}
+          TEMPDIR: ${{ env.TEMPDIR }}/bats-detik
         run: |
-          ./download-bats-lib.sh  'bats-core/bats-detik'  "$VERSION"  "$TARGET_DIR"
+          ./download-bats-lib.sh  'bats-core/bats-detik'  "$VERSION"  "$TEMPDIR"
       - name: Set cache for Bats-file source
         if: env.DOWNLOAD_BATS_FILE == '1'
         uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v4
         id: file-source-cache
         with:
           path: ${{ steps.setup-bats.outputs.tmp-path }}/bats-file
-          key: ${{ runner.os }}-${{ runner.arch }}-bats-file-${{ env.FILE_VERSION }}-source
+          key: ${{ runner.os }}-${{ runner.arch }}-bats-file-${{ steps.setup-bats.outputs.file-version }}-source
       - name: Download Bats-file source
         if: env.DOWNLOAD_BATS_FILE == '1' && steps.file-source-cache.outputs.cache-hit != 'true'
         shell: bash
         env:
-          VERSION: latest
-          TARGET_DIR: ${{ steps.setup-bats.outputs.tmp-path }}/bats-file
+          VERSION: ${{ steps.setup-bats.outputs.file-version }}
+          TEMPDIR: ${{ env.TEMPDIR }}/bats-file
         run: |
-          ./download-bats-lib.sh  'bats-core/bats-file'  "$VERSION"  "$TARGET_DIR"
+          ./download-bats-lib.sh  'bats-core/bats-file'  "$VERSION"  "$TEMPDIR"
 
       - name: Execute test to check Bats-support
         shell: bash
         env:
-          BATS_LIB_PATH: ${{ steps.setup-bats.outputs.lib-path }}
-          TMP_PATH: ${{ steps.setup-bats.outputs.tmp-path }}
+          TEMPDIR: ${{ env.TEMPDIR }}/bats-support
         run: |
-          cd ${TMP_PATH}/bats-support/
-          echo $BATS_LIB_PATH
+          cd ${TEMPDIR}
           bats test
       - name: Execute test to check  Bats-assert
         shell: bash
         env:
-          BATS_LIB_PATH: ${{ steps.setup-bats.outputs.lib-path }}
-          TMP_PATH: ${{ steps.setup-bats.outputs.tmp-path }}
+          TEMPDIR: ${{ env.TEMPDIR }}/bats-assert
         run: |
-          cd ${TMP_PATH}/bats-assert/
+          cd ${TEMPDIR}
           bats test
       - name: Execute test to check Bats-detik
         shell: bash
         continue-on-error: true
         env:
-          BATS_LIB_PATH: ${{ steps.setup-bats.outputs.lib-path }}
-          TMP_PATH: ${{ steps.setup-bats.outputs.tmp-path }}
+          TEMPDIR: ${{ env.TEMPDIR }}/bats-detik
         run: |
-          cd ${TMP_PATH}/bats-detik/
+          cd ${TEMPDIR}
           bats tests
       - name: Execute test to check Bats-file
         shell: bash
@@ -140,14 +144,11 @@ jobs:
         # in gh runner env
         continue-on-error: true
         env:
-          BATS_LIB_PATH: ${{ steps.setup-bats.outputs.lib-path }}
-          TMP_PATH: ${{ steps.setup-bats.outputs.tmp-path }}
+          TEMPDIR: ${{ env.TEMPDIR }}/bats-file
         run: |
-          cd ${TMP_PATH}/bats-file/
+          cd ${TEMPDIR}
           bats test
       - name: Execute example tests
-        env:
-          BATS_LIB_PATH: ${{ steps.setup-bats.outputs.lib-path }}
         shell: bash
         run:
           bats -T -p tests
@@ -171,14 +172,8 @@ jobs:
         id: setup-bats
         with:
           bats-version: ${{ matrix.version }}
-          support-clean: "false"
-          assert-clean: "false"
-          detik-clean: "false"
-          file-clean: "false"
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Execute example tests
-        env:
-          BATS_LIB_PATH: ${{ steps.setup-bats.outputs.lib-path }}
         shell: bash
         run:
           bats -T -p tests
