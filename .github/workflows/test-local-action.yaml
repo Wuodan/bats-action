@@ -36,6 +36,78 @@ jobs:
           detik-clean: "false"
           file-clean: "false"
           github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check bats libs source path
+        shell: bash
+        env:
+          TMP_PATH: ${{ steps.setup-bats.outputs.tmp-path }}
+        run: |
+          set -eu
+          [[ -d "${TMP_PATH}/bats-support" ]] || echo "DOWNLOAD_BATS_SUPPORT=1">>${GITHUB_ENV}
+          [[ -d "${TMP_PATH}/bats-assert" ]] || echo "DOWNLOAD_BATS_ASSERT=1">>${GITHUB_ENV}
+          [[ -d "${TMP_PATH}/bats-detik" ]] || echo "DOWNLOAD_BATS_DETIK=1">>${GITHUB_ENV}
+          [[ -d "${TMP_PATH}/bats-file" ]] || echo "DOWNLOAD_BATS_FILE=1">>${GITHUB_ENV}
+      - name: Set cache for Bats-support source
+        if: env.DOWNLOAD_BATS_SUPPORT == '1'
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v4
+        id: support-source-cache
+        with:
+          path: ${{ steps.setup-bats.outputs.tmp-path }}/bats-support
+          key: ${{ runner.os }}-${{ runner.arch }}-bats-support-${{ env.SUPPORT_VERSION }}-source
+      - name: Download Bats-support source
+        if: env.DOWNLOAD_BATS_SUPPORT == '1' && steps.support-source-cache.outputs.cache-hit != 'true'
+        shell: bash
+        env:
+          VERSION: latest
+          TARGET_DIR: ${{ steps.setup-bats.outputs.tmp-path }}/bats-support
+        run: |
+          ./download-bats-lib.sh  'bats-core/bats-support'  "$VERSION"  "$TARGET_DIR"
+      - name: Set cache for Bats-assert source
+        if: env.DOWNLOAD_BATS_ASSERT == '1'
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v4
+        id: assert-source-cache
+        with:
+          path: ${{ steps.setup-bats.outputs.tmp-path }}/bats-assert
+          key: ${{ runner.os }}-${{ runner.arch }}-bats-assert-${{ env.ASSERT_VERSION }}-source
+      - name: Download Bats-assert source
+        if: env.DOWNLOAD_BATS_ASSERT == '1' && steps.assert-source-cache.outputs.cache-hit != 'true'
+        shell: bash
+        env:
+          VERSION: latest
+          TARGET_DIR: ${{ steps.setup-bats.outputs.tmp-path }}/bats-assert
+        run: |
+          ./download-bats-lib.sh  'bats-core/bats-assert'  "$VERSION"  "$TARGET_DIR"
+      - name: Set cache for Bats-detik source
+        if: env.DOWNLOAD_BATS_DETIK == '1'
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v4
+        id: detik-source-cache
+        with:
+          path: ${{ steps.setup-bats.outputs.tmp-path }}/bats-detik
+          key: ${{ runner.os }}-${{ runner.arch }}-bats-detik-${{ env.DETIK_VERSION }}-source
+      - name: Download Bats-detik source
+        if: env.DOWNLOAD_BATS_DETIK == '1' && steps.detik-source-cache.outputs.cache-hit != 'true'
+        shell: bash
+        env:
+          VERSION: latest
+          TARGET_DIR: ${{ steps.setup-bats.outputs.tmp-path }}/bats-detik
+        run: |
+          ./download-bats-lib.sh  'bats-core/bats-detik'  "$VERSION"  "$TARGET_DIR"
+      - name: Set cache for Bats-file source
+        if: env.DOWNLOAD_BATS_FILE == '1'
+        uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v4
+        id: file-source-cache
+        with:
+          path: ${{ steps.setup-bats.outputs.tmp-path }}/bats-file
+          key: ${{ runner.os }}-${{ runner.arch }}-bats-file-${{ env.FILE_VERSION }}-source
+      - name: Download Bats-file source
+        if: env.DOWNLOAD_BATS_FILE == '1' && steps.file-source-cache.outputs.cache-hit != 'true'
+        shell: bash
+        env:
+          VERSION: latest
+          TARGET_DIR: ${{ steps.setup-bats.outputs.tmp-path }}/bats-file
+        run: |
+          ./download-bats-lib.sh  'bats-core/bats-file'  "$VERSION"  "$TARGET_DIR"
+
       - name: Execute test to check Bats-support
         shell: bash
         env:
