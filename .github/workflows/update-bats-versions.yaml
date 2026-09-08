@@ -5,29 +5,36 @@ on:
   schedule:
     - cron: "0 8 * * 1"
 
-permissions:
-  contents: write
-  pull-requests: write
-
-concurrency:
-  group: update-bats-versions
-  cancel-in-progress: false
+permissions: {}
 
 jobs:
   update:
     runs-on: ubuntu-latest
-    env:
-      DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
-      GH_TOKEN: ${{ github.token }}
-      GITHUB_TOKEN: ${{ github.token }}
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
-      - name: Checkout default branch
+      - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
-        with:
-          ref: ${{ github.event.repository.default_branch }}
+
+      - name: Set branch names
+        shell: bash
+        env:
+          DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+        run: |
+          if [ "$GITHUB_REF_TYPE" = branch ]; then
+            target_branch="$GITHUB_REF_NAME"
+          else
+            target_branch="$DEFAULT_BRANCH"
+          fi
+
+          echo "TARGET_BRANCH=$target_branch" >> "$GITHUB_ENV"
+          echo "UPDATE_BRANCH=update-bats-versions/$target_branch" >> "$GITHUB_ENV"
 
       - name: Update versions and checksums
-        run: ./update-bats-versions.sh bats-core
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: ./update-bats-versions.sh "$GITHUB_REPOSITORY_OWNER"
 
       - name: Check for updates
         id: updates
@@ -42,32 +49,26 @@ jobs:
       - name: Find existing update pull request
         id: existing-pr
         shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
-          pull_request="$(gh pr list --state open --base "$DEFAULT_BRANCH" \
-            --json number,headRefName,isCrossRepository \
-            --jq '.[] | select(.isCrossRepository == false and (.headRefName | startswith("update-bats-versions-"))) | "\(.number) \(.headRefName)"' \
-            | head -n 1)"
+          pull_request="$(gh pr list --state open --head "$UPDATE_BRANCH" \
+            --json number --jq '.[0].number // empty')"
 
           if [ -n "$pull_request" ]; then
             echo "exists=true" >> "$GITHUB_OUTPUT"
-            echo "number=${pull_request%% *}" >> "$GITHUB_OUTPUT"
-            echo "branch=${pull_request#* }" >> "$GITHUB_OUTPUT"
+            echo "number=$pull_request" >> "$GITHUB_OUTPUT"
           else
             echo "exists=false" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Commit updates
         if: steps.updates.outputs.changed == 'true'
-        id: commit
         shell: bash
-        env:
-          EXISTING_BRANCH: ${{ steps.existing-pr.outputs.branch }}
         run: |
-          branch="${EXISTING_BRANCH:-update-bats-versions-$GITHUB_RUN_ID}"
-          echo "branch=$branch" >> "$GITHUB_OUTPUT"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git switch -c "$branch"
+          git switch -c "$UPDATE_BRANCH"
           git add bats-versions.sh
           git commit -m "Update Bats repository versions"
 
@@ -75,7 +76,6 @@ jobs:
         if: steps.updates.outputs.changed == 'true'
         shell: bash
         env:
-          UPDATE_BRANCH: ${{ steps.commit.outputs.branch }}
           UPDATE_PR_EXISTS: ${{ steps.existing-pr.outputs.exists }}
         run: |
           if [ "$UPDATE_PR_EXISTS" = true ]; then
@@ -93,10 +93,10 @@ jobs:
         if: steps.updates.outputs.changed == 'true' && steps.existing-pr.outputs.exists == 'false'
         shell: bash
         env:
-          UPDATE_BRANCH: ${{ steps.commit.outputs.branch }}
+          GH_TOKEN: ${{ github.token }}
         run: |
           gh pr create \
-            --base "$DEFAULT_BRANCH" \
+            --base "$TARGET_BRANCH" \
             --head "$UPDATE_BRANCH" \
             --title "Update Bats repository versions" \
             --body "Updates Bats repositories to their latest release tags and refreshes their SHA-256 checksums."
@@ -105,8 +105,9 @@ jobs:
         if: steps.updates.outputs.changed == 'false' && steps.existing-pr.outputs.exists == 'true'
         shell: bash
         env:
+          GH_TOKEN: ${{ github.token }}
           UPDATE_PR_NUMBER: ${{ steps.existing-pr.outputs.number }}
         run: |
           gh pr close "$UPDATE_PR_NUMBER" \
             --delete-branch \
-            --comment "Closing because all Bats repository versions and checksums are current on the default branch."
+            --comment "Closing because all Bats repository versions and checksums are current on $TARGET_BRANCH."
