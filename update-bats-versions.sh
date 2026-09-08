@@ -6,7 +6,7 @@ script_dir="$(cd "$(dirname "$0")" && pwd)"
 versions_file="$script_dir/bats-versions.sh"
 temp_dir="$(mktemp -d)"
 
-declare -a api_curl_args=(
+declare -a curl_args=(
   --fail
   --silent
   --show-error
@@ -16,7 +16,7 @@ declare -a api_curl_args=(
 )
 
 if [ -n "${GITHUB_TOKEN:-}" ]; then
-  api_curl_args+=(--header "Authorization: Bearer $GITHUB_TOKEN")
+  curl_args+=(--header "Authorization: Bearer $GITHUB_TOKEN")
 fi
 
 update_repository() {
@@ -29,7 +29,7 @@ update_repository() {
   local archive
   local sha256
 
-  release="$(curl "${api_curl_args[@]}" \
+  release="$(curl "${curl_args[@]}" \
     "https://api.github.com/repos/$repo/releases/latest")"
   tag="$(printf '%s' "$release" \
     | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
@@ -44,8 +44,7 @@ update_repository() {
   esac
 
   archive="$temp_dir/${repo##*/}.tar.gz"
-  curl --fail --silent --show-error --location \
-    --retry 4 --retry-connrefused --output "$archive" \
+  curl "${curl_args[@]}" --output "$archive" \
     "https://github.com/$repo/archive/refs/tags/$tag.tar.gz"
 
   sha256="$(sha256sum "$archive")"
