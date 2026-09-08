@@ -1,23 +1,10 @@
 #!/usr/bin/env bash
 set -eu
 
-repo="${1:?Usage: $0 <repo> <version> <tempdir>}"
-version="${2:?Usage: $0 <repo> <version> <tempdir>}"
-tempdir="${3:?Usage: $0 <repo> <version> <tempdir>}"
-script_dir="$(cd "$(dirname "$0")" && pwd)"
-. "$script_dir/bats-versions.sh"
-
-case "$repo:$version" in
-  "bats-core/bats-core:$BATS_VERSION") expected_sha256="$BATS_SHA256" ;;
-  "bats-core/bats-support:$SUPPORT_VERSION") expected_sha256="$SUPPORT_SHA256" ;;
-  "bats-core/bats-assert:$ASSERT_VERSION") expected_sha256="$ASSERT_SHA256" ;;
-  "bats-core/bats-detik:$DETIK_VERSION") expected_sha256="$DETIK_SHA256" ;;
-  "bats-core/bats-file:$FILE_VERSION") expected_sha256="$FILE_SHA256" ;;
-  *)
-    echo "No checksum configured for ${repo} v${version}" >&2
-    exit 1
-    ;;
-esac
+repo="${1:?Usage: $0 <repo> <version> <sha256> <target-directory>}"
+version="${2:?Usage: $0 <repo> <version> <sha256> <target-directory>}"
+expected_sha256="${3:?Usage: $0 <repo> <version> <sha256> <target-directory>}"
+tempdir="${4:?Usage: $0 <repo> <version> <sha256> <target-directory>}"
 
 url="https://github.com/${repo}/archive/refs/tags/v${version}.tar.gz"
 archive="${tempdir}.tar.gz"

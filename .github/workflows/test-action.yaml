@@ -28,31 +28,18 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
 
       - name: Setup Bats and Bats libraries
-        id: setup-bats
         uses: ./
 
       - name: Download Bats library sources
         id: sources
         shell: bash
-        env:
-          SUPPORT_VERSION: ${{ steps.setup-bats.outputs.support-version }}
-          ASSERT_VERSION: ${{ steps.setup-bats.outputs.assert-version }}
-          DETIK_VERSION: ${{ steps.setup-bats.outputs.detik-version }}
-          FILE_VERSION: ${{ steps.setup-bats.outputs.file-version }}
         run: |
           set -eu
 
           source_path="$(mktemp -d)"
           echo "path=$source_path" >> "$GITHUB_OUTPUT"
 
-          ./download-bats-lib.sh bats-core/bats-support \
-            "$SUPPORT_VERSION" "$source_path/bats-support"
-          ./download-bats-lib.sh bats-core/bats-assert \
-            "$ASSERT_VERSION" "$source_path/bats-assert"
-          ./download-bats-lib.sh bats-core/bats-detik \
-            "$DETIK_VERSION" "$source_path/bats-detik"
-          ./download-bats-lib.sh bats-core/bats-file \
-            "$FILE_VERSION" "$source_path/bats-file"
+          ./download-bats-repos.sh "$source_path"
 
       - name: Test bats-support
         shell: bash

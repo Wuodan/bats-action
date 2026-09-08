@@ -9,42 +9,19 @@ outputs:
   lib-path:
     description: Bats library search path
     value: ${{ steps.config.outputs.install-path }}
-  bats-version:
-    description: Installed bats-core version
-    value: ${{ steps.config.outputs.bats-version }}
-  support-version:
-    description: Installed bats-support version
-    value: ${{ steps.config.outputs.support-version }}
-  assert-version:
-    description: Installed bats-assert version
-    value: ${{ steps.config.outputs.assert-version }}
-  detik-version:
-    description: Installed bats-detik version
-    value: ${{ steps.config.outputs.detik-version }}
-  file-version:
-    description: Installed bats-file version
-    value: ${{ steps.config.outputs.file-version }}
 
 runs:
   using: composite
   steps:
-    - name: Define versions and install target
+    - name: Define install target
       id: config
       shell: bash
       run: |
         set -eu
 
-        . "$GITHUB_ACTION_PATH/bats-versions.sh"
         install_path="$HOME/.local/share/bats"
 
-        {
-          echo "bats-version=$BATS_VERSION"
-          echo "support-version=$SUPPORT_VERSION"
-          echo "assert-version=$ASSERT_VERSION"
-          echo "detik-version=$DETIK_VERSION"
-          echo "file-version=$FILE_VERSION"
-          echo "install-path=$install_path"
-        } >> "$GITHUB_OUTPUT"
+        echo "install-path=$install_path" >> "$GITHUB_OUTPUT"
 
         echo "BATS_LIB_PATH=$install_path" >> "$GITHUB_ENV"
 
