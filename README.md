@@ -38,8 +38,3 @@ bats_load_library bats-detik/detik.bash
 | Key | Description |
 | --- | --- |
 | `lib-path` | Bats library search path |
-| `bats-version` | Installed bats-core version |
-| `support-version` | Installed bats-support version |
-| `assert-version` | Installed bats-assert version |
-| `detik-version` | Installed bats-detik version |
-| `file-version` | Installed bats-file version |
