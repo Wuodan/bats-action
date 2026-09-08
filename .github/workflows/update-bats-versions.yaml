@@ -13,6 +13,8 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+    env:
+      UPDATE_PR_TITLE: Update Bats repository versions
     steps:
       - name: Checkout
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
@@ -52,15 +54,25 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          pull_request="$(gh pr list --state open --head "$UPDATE_BRANCH" \
-            --json number --jq '.[0].number // empty')"
+          pull_request="$(gh pr list --state open \
+            --base "$TARGET_BRANCH" \
+            --head "$UPDATE_BRANCH" \
+            --search "\"$UPDATE_PR_TITLE\" in:title" \
+            --json number --jq '.[].number')"
 
-          if [ -n "$pull_request" ]; then
-            echo "exists=true" >> "$GITHUB_OUTPUT"
-            echo "number=$pull_request" >> "$GITHUB_OUTPUT"
-          else
-            echo "exists=false" >> "$GITHUB_OUTPUT"
-          fi
+          case "$pull_request" in
+            "")
+              echo "exists=false" >> "$GITHUB_OUTPUT"
+              ;;
+            *$'\n'*)
+              echo "Found multiple matching update pull requests" >&2
+              exit 1
+              ;;
+            *)
+              echo "exists=true" >> "$GITHUB_OUTPUT"
+              echo "number=$pull_request" >> "$GITHUB_OUTPUT"
+              ;;
+          esac
 
       - name: Commit updates
         if: steps.updates.outputs.changed == 'true'
@@ -98,7 +110,7 @@ jobs:
           gh pr create \
             --base "$TARGET_BRANCH" \
             --head "$UPDATE_BRANCH" \
-            --title "Update Bats repository versions" \
+            --title "$UPDATE_PR_TITLE" \
             --body "Updates Bats repositories to their latest release tags and refreshes their SHA-256 checksums."
 
       - name: Close obsolete pull request
