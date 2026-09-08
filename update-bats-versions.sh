@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 set -eu
 
-repo_owner="${1:?Usage: $0 <repo-owner>}"
 script_dir="$(cd "$(dirname "$0")" && pwd)"
 versions_file="$script_dir/bats-versions.sh"
 temp_dir="$(mktemp -d)"
@@ -59,10 +58,10 @@ update_repository() {
   echo "$repo: $version" >&2
 }
 
-update_repository "$repo_owner/bats-core" BATS_VERSION BATS_SHA256
-update_repository "$repo_owner/bats-support" SUPPORT_VERSION SUPPORT_SHA256
-update_repository "$repo_owner/bats-assert" ASSERT_VERSION ASSERT_SHA256
-update_repository "$repo_owner/bats-detik" DETIK_VERSION DETIK_SHA256
-update_repository "$repo_owner/bats-file" FILE_VERSION FILE_SHA256
+update_repository "bats-core/bats-core" BATS_VERSION BATS_SHA256
+update_repository "bats-core/bats-support" SUPPORT_VERSION SUPPORT_SHA256
+update_repository "bats-core/bats-assert" ASSERT_VERSION ASSERT_SHA256
+update_repository "bats-core/bats-detik" DETIK_VERSION DETIK_SHA256
+update_repository "bats-core/bats-file" FILE_VERSION FILE_SHA256
 
 rmdir "$temp_dir"
