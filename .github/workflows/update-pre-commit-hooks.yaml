@@ -3,6 +3,7 @@ name: CI pre-commit-update
 on:
   workflow_dispatch:
   schedule:
+    # Daily at 10:00
     - cron: "0 10 * * *"
 
 jobs:
