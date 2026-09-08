@@ -1,0 +1,85 @@
+name: Test action
+
+on:
+  workflow_dispatch:
+  pull_request:
+  release:
+    types: [published]
+  push:
+    branches: [main]
+    tags: ["*"]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}${{ github.event_name == 'release' && '-release' || '' }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, ubuntu-latest, windows-2022, windows-latest, macos-14, macos-latest]
+    runs-on: ${{ matrix.os }}
+    env:
+      TERM: xterm
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
+
+      - name: Setup Bats and Bats libraries
+        id: setup-bats
+        uses: ./
+
+      - name: Download Bats library sources
+        id: sources
+        shell: bash
+        env:
+          SUPPORT_VERSION: ${{ steps.setup-bats.outputs.support-version }}
+          ASSERT_VERSION: ${{ steps.setup-bats.outputs.assert-version }}
+          DETIK_VERSION: ${{ steps.setup-bats.outputs.detik-version }}
+          FILE_VERSION: ${{ steps.setup-bats.outputs.file-version }}
+        run: |
+          set -eu
+
+          source_path="$(mktemp -d)"
+          echo "path=$source_path" >> "$GITHUB_OUTPUT"
+
+          ./download-bats-lib.sh bats-core/bats-support \
+            "$SUPPORT_VERSION" "$source_path/bats-support"
+          ./download-bats-lib.sh bats-core/bats-assert \
+            "$ASSERT_VERSION" "$source_path/bats-assert"
+          ./download-bats-lib.sh bats-core/bats-detik \
+            "$DETIK_VERSION" "$source_path/bats-detik"
+          ./download-bats-lib.sh bats-core/bats-file \
+            "$FILE_VERSION" "$source_path/bats-file"
+
+      - name: Test bats-support
+        shell: bash
+        env:
+          SOURCE_PATH: ${{ steps.sources.outputs.path }}
+        run: bats "$SOURCE_PATH/bats-support/test"
+
+      - name: Test bats-assert
+        shell: bash
+        env:
+          SOURCE_PATH: ${{ steps.sources.outputs.path }}
+        run: bats "$SOURCE_PATH/bats-assert/test"
+
+      - name: Test bats-detik
+        continue-on-error: ${{ runner.os == 'macOS' }}
+        shell: bash
+        env:
+          SOURCE_PATH: ${{ steps.sources.outputs.path }}
+        run: bats "$SOURCE_PATH/bats-detik/tests"
+
+      - name: Test bats-file
+        continue-on-error: true
+        shell: bash
+        env:
+          SOURCE_PATH: ${{ steps.sources.outputs.path }}
+        run: bats "$SOURCE_PATH/bats-file/test"
+
+      - name: Test action examples
+        shell: bash
+        run: bats -T -p tests

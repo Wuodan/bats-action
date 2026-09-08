@@ -1,362 +1,65 @@
 name: Setup Bats and Bats libraries
-description: A GitHub Action for installing Bats and Bats-libs(support, assert, detik, file)
+description: A GitHub Action for installing Bats and Bats libraries (support, assert, detik, file)
 author: bats-core
 branding:
   color: yellow
   icon: command
-inputs:
-  # Bats binary
-  bats-install:
-    description: "Bats installation, default to true"
-    required: false
-    default: "true"
-  bats-version:
-    description: "Bats version, default to latest (1.11.0 atm)"
-    required: false
-  # support
-  support-install:
-    description: "Bats-support installation, default to true"
-    required: false
-    default: "true"
-  support-version:
-    description: "Bats-support version, default to latest"
-    required: false
-    default: "0.3.0"
-  support-path:
-    description: "Bats-support path, default to $HOME/.local/share/bats/bats-support"
-    required: false
-  # assert
-  assert-install:
-    description: "Bats-assert installation, default to true"
-    required: false
-    default: "true"
-  assert-version:
-    description: "Bats-assert version, default to latest"
-    required: false
-    default: "latest"
-  assert-path:
-    description: "Bats-assert path, default to $HOME/.local/share/bats/bats-assert"
-    required: false
-  # detik
-  detik-install:
-    description: "Bats-detik installation, default to true"
-    required: false
-    default: "true"
-  detik-version:
-    description: "Bats-detik version, default to latest"
-    required: false
-    default: "1.3.2"
-  detik-path:
-    description: "Bats-detik path, default to $HOME/.local/share/bats/bats-detik"
-    required: false
-  # file
-  file-install:
-    description: "Bats-file installation, default to true"
-    required: false
-    default: "true"
-  file-version:
-    description: "Bats-file version, default to latest"
-    required: false
-    default: "0.4.0"
-  file-path:
-    description: "Bats-file path, default to $HOME/.local/share/bats/bats-file"
-    required: false
-  github-token:
-    description: "GitHub token to use to download the releases"
-    required: false
+
 outputs:
   lib-path:
-    description: "Bats library search path"
-    value: ${{ steps.paths.outputs.lib-path }}
-  tmp-path:
-    description: "Temporary path used for downloaded library sources"
-    value: ${{ steps.paths.outputs.tmp-path }}
+    description: Bats library search path
+    value: ${{ steps.config.outputs.install-path }}
   bats-version:
-    description: "Installed bats-core version"
-    value: ${{ steps.bats-version.outputs.version }}
+    description: Installed bats-core version
+    value: ${{ steps.config.outputs.bats-version }}
   support-version:
-    description: "Installed bats-support version"
-    value: ${{ steps.support-version.outputs.version }}
+    description: Installed bats-support version
+    value: ${{ steps.config.outputs.support-version }}
   assert-version:
-    description: "Installed bats-assert version"
-    value: ${{ steps.assert-version.outputs.version }}
+    description: Installed bats-assert version
+    value: ${{ steps.config.outputs.assert-version }}
   detik-version:
-    description: "Installed bats-detik version"
-    value: ${{ steps.detik-version.outputs.version }}
+    description: Installed bats-detik version
+    value: ${{ steps.config.outputs.detik-version }}
   file-version:
-    description: "Installed bats-file version"
-    value: ${{ steps.file-version.outputs.version }}
+    description: Installed bats-file version
+    value: ${{ steps.config.outputs.file-version }}
 
 runs:
   using: composite
   steps:
-    - name: "Set path env vars"
-      id: paths
+    - name: Define versions and install target
+      id: config
       shell: bash
       run: |
         set -eu
-        BATS_LIB_PATH="$HOME/.local/share/bats"
-        TEMPDIR="$RUNNER_TEMP/bats"
-        if [[ "$RUNNER_OS" == "Windows" ]]; then
-          TEMPDIR="$(cygpath --unix "$TEMPDIR")"
-        fi
-        (
-          echo "BATS_LIB_PATH=$BATS_LIB_PATH"
-          echo "TEMPDIR=$TEMPDIR"
-        ) >> "$GITHUB_ENV"
-        (
-          echo "lib-path=$BATS_LIB_PATH"
-          echo "tmp-path=$TEMPDIR"
-        ) >> "$GITHUB_OUTPUT"
 
-    - name: "Calculate version and path for bats-core"
-      if: inputs.bats-install == 'true'
-      id: bats-version
+        install_path="$HOME/.local/share/bats"
+
+        {
+          echo "bats-version=1.14.0"
+          echo "support-version=0.3.0"
+          echo "assert-version=2.2.4"
+          echo "detik-version=1.3.2"
+          echo "file-version=0.4.0"
+          echo "install-path=$install_path"
+        } >> "$GITHUB_OUTPUT"
+
+        echo "BATS_LIB_PATH=$install_path" >> "$GITHUB_ENV"
+
+    - name: Download and install Bats and Bats libraries
       shell: bash
       env:
-        VERSION: ${{ inputs.bats-version }}
-        GITHUB_TOKEN: ${{ inputs.github-token }}
-      run: |
-        VERSION="$(./get-bats-repo-version.sh 'bats-core/bats-core' "$VERSION")"
-        echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+        BATS_VERSION: ${{ steps.config.outputs.bats-version }}
+        SUPPORT_VERSION: ${{ steps.config.outputs.support-version }}
+        ASSERT_VERSION: ${{ steps.config.outputs.assert-version }}
+        DETIK_VERSION: ${{ steps.config.outputs.detik-version }}
+        FILE_VERSION: ${{ steps.config.outputs.file-version }}
+        INSTALL_PATH: ${{ steps.config.outputs.install-path }}
+      run: '"$GITHUB_ACTION_PATH/install-bats.sh"'
 
-    - name: "Set cache for Bats"
-      uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v4
-      if: inputs.bats-install == 'true'
-      id: bats-cache
-      with:
-        path: ${{ env.BATS_LIB_PATH }}
-        key: ${{ runner.os }}-${{ runner.arch }}-bats-${{ steps.bats-version.outputs.version }}
-
-    - name: "Download and install Bats"
-      if: inputs.bats-install == 'true' && steps.bats-cache.outputs.cache-hit != 'true'
-      id: bats-install
+    - name: Add Bats to PATH
       shell: bash
       env:
-        VERSION: ${{ steps.bats-version.outputs.version }}
-        DESTDIR: ${{ env.BATS_LIB_PATH }}
-        GITHUB_TOKEN: ${{ inputs.github-token }}
-      run: |
-        set -eu
-        # download tarball to the temp dir
-        ./download-bats-lib.sh  'bats-core/bats-core'  "$VERSION"  "$TEMPDIR"
-        # install from source
-        cd "${TEMPDIR}"
-        mkdir -p "${DESTDIR}"
-        ./install.sh "${DESTDIR}"
-        rm -rf "${TEMPDIR}"
-        echo "Bats v${VERSION} installed in $DESTDIR"
-
-    - name: "Set PATH"
-      if: inputs.bats-install == 'true'
-      shell: bash
-      run: |
-        set -eu
-        echo "${BATS_LIB_PATH}/bin" >> "$GITHUB_PATH"
-
-    - name: "Calculate version and path for bats-support"
-      if: inputs.support-install == 'true'
-      id: support-version
-      shell: bash
-      env:
-        VERSION: ${{ inputs.support-version }}
-        INPUT_PATH: ${{ inputs.support-path }}
-        GITHUB_TOKEN: ${{ inputs.github-token }}
-      run: |
-        VERSION="$(./get-bats-repo-version.sh 'bats-core/bats-support' "$VERSION")"
-        TARGET_PATH="${INPUT_PATH:-$BATS_LIB_PATH/bats-support}"
-        (
-          echo "version=$VERSION"
-          echo "path=$TARGET_PATH"
-        ) >> "$GITHUB_OUTPUT"
-
-    - name: "Set cache for Bats-support"
-      if: inputs.support-install == 'true'
-      uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v4
-      id: support-cache
-      with:
-        path: ${{ steps.support-version.outputs.path }}
-        key: ${{ runner.os }}-${{ runner.arch }}-bats-support-${{ steps.support-version.outputs.version }}
-
-    - name: "Download and install Bats-support"
-      if: inputs.support-install == 'true' && steps.support-cache.outputs.cache-hit != 'true'
-      id: support-install
-      shell: bash
-      env:
-        VERSION: ${{ steps.support-version.outputs.version }}
-        DESTDIR: ${{ steps.support-version.outputs.path }}
-        TEMPDIR: ${{ env.TEMPDIR }}/bats-support
-        GITHUB_TOKEN: ${{ inputs.github-token }}
-      run: |
-        # download tarball to the temp dir
-        ./download-bats-lib.sh  'bats-core/bats-support'  "$VERSION"  "$TEMPDIR"
-        # install from source
-        cd "${TEMPDIR}"
-        mkdir -p "${DESTDIR}/src/"
-        install -m755 load.bash "${DESTDIR}/load.bash"
-        for fn in src/*.bash; do
-          install -m755 "$fn" \
-             "${DESTDIR}/src/$(basename "$fn")"
-        done
-        rm -rf "${TEMPDIR}"
-        echo "Bats Support v$VERSION installed in $DESTDIR"
-
-    - name: "Calculate version and path for bats-assert"
-      if: inputs.assert-install == 'true'
-      id: assert-version
-      shell: bash
-      env:
-        VERSION: ${{ inputs.assert-version }}
-        INPUT_PATH: ${{ inputs.assert-path }}
-        GITHUB_TOKEN: ${{ inputs.github-token }}
-      run: |
-        VERSION="$(./get-bats-repo-version.sh 'bats-core/bats-assert' "$VERSION")"
-        TARGET_PATH="${INPUT_PATH:-$BATS_LIB_PATH/bats-assert}"
-        (
-          echo "version=$VERSION"
-          echo "path=$TARGET_PATH"
-        ) >> "$GITHUB_OUTPUT"
-
-    - name: "Set cache for Bats-assert"
-      if: inputs.assert-install == 'true'
-      uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v4
-      id: assert-cache
-      with:
-        path: ${{ steps.assert-version.outputs.path }}
-        key: ${{ runner.os }}-${{ runner.arch }}-bats-assert-${{ steps.assert-version.outputs.version }}
-
-    - name: "Download and install Bats-assert"
-      if: inputs.assert-install == 'true' && steps.assert-cache.outputs.cache-hit != 'true'
-      id: assert-install
-      shell: bash
-      env:
-        VERSION: ${{ steps.assert-version.outputs.version }}
-        DESTDIR: ${{ steps.assert-version.outputs.path }}
-        TEMPDIR: ${{ env.TEMPDIR }}/bats-assert
-        GITHUB_TOKEN: ${{ inputs.github-token }}
-      run: |
-        # download tarball to the temp dir
-        ./download-bats-lib.sh  'bats-core/bats-assert'  "$VERSION"  "$TEMPDIR"
-        # install from source
-        cd "${TEMPDIR}"
-        mkdir -p "${DESTDIR}/src/"
-        install -m755 load.bash "${DESTDIR}/load.bash"
-        for fn in src/*.bash; do
-          install -m755 "$fn" \
-             "${DESTDIR}/src/$(basename "$fn")"
-        done
-        rm -rf "${TEMPDIR}"
-        echo "Bats Assert v$VERSION installed in $DESTDIR"
-
-    - name: "Calculate version and path for bats-detik"
-      if: inputs.detik-install == 'true'
-      id: detik-version
-      shell: bash
-      env:
-        VERSION: ${{ inputs.detik-version }}
-        INPUT_PATH: ${{ inputs.detik-path }}
-        GITHUB_TOKEN: ${{ inputs.github-token }}
-      run: |
-        VERSION="$(./get-bats-repo-version.sh 'bats-core/bats-detik' "$VERSION")"
-        TARGET_PATH="${INPUT_PATH:-$BATS_LIB_PATH/bats-detik}"
-        (
-          echo "version=$VERSION"
-          echo "path=$TARGET_PATH"
-        ) >> "$GITHUB_OUTPUT"
-
-    - name: "Set cache for Bats-detik"
-      if: inputs.detik-install == 'true'
-      uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v4
-      id: detik-cache
-      with:
-        path: ${{ steps.detik-version.outputs.path }}
-        key: ${{ runner.os }}-${{ runner.arch }}-bats-detik-${{ steps.detik-version.outputs.version }}
-
-    - name: "Download and install Bats-detik"
-      if: inputs.detik-install == 'true' && steps.detik-cache.outputs.cache-hit != 'true'
-      id: detik-install
-      shell: bash
-      env:
-        VERSION: ${{ steps.detik-version.outputs.version }}
-        DESTDIR: ${{ steps.detik-version.outputs.path }}
-        TEMPDIR: ${{ env.TEMPDIR }}/bats-detik
-        GITHUB_TOKEN: ${{ inputs.github-token }}
-      run: |
-        # download tarball to the temp dir
-        ./download-bats-lib.sh  'bats-core/bats-detik'  "$VERSION"  "$TEMPDIR"
-        # install from source
-        cd "${TEMPDIR}"
-        mkdir -p "${DESTDIR}/src/"
-        for fn in lib/*.bash; do
-          install -m755 "$fn" \
-             "${DESTDIR}/$(basename "$fn")"
-        done
-        rm -rf "${TEMPDIR}"
-        echo "Bats Detik v$VERSION installed in $DESTDIR"
-
-    - name: "Calculate version and path for bats-file"
-      if: inputs.file-install == 'true'
-      id: file-version
-      shell: bash
-      env:
-        VERSION: ${{ inputs.file-version }}
-        INPUT_PATH: ${{ inputs.file-path }}
-        GITHUB_TOKEN: ${{ inputs.github-token }}
-      run: |
-        VERSION="$(./get-bats-repo-version.sh 'bats-core/bats-file' "$VERSION")"
-        TARGET_PATH="${INPUT_PATH:-$BATS_LIB_PATH/bats-file}"
-        (
-          echo "version=$VERSION"
-          echo "path=$TARGET_PATH"
-        ) >> "$GITHUB_OUTPUT"
-
-    - name: "Set cache for Bats-file"
-      if: inputs.file-install == 'true'
-      uses: actions/cache@cdf6c1fa76f9f475f3d7449005a359c84ca0f306 # v4
-      id: file-cache
-      with:
-        path: ${{ steps.file-version.outputs.path }}
-        key: ${{ runner.os }}-${{ runner.arch }}-bats-file-${{ steps.file-version.outputs.version }}
-
-    - name: "Download and install Bats-file"
-      if: inputs.file-install == 'true' && steps.file-cache.outputs.cache-hit != 'true'
-      id: file-install
-      shell: bash
-      env:
-        VERSION: ${{ steps.file-version.outputs.version }}
-        DESTDIR: ${{ steps.file-version.outputs.path }}
-        TEMPDIR: ${{ env.TEMPDIR }}/bats-file
-        GITHUB_TOKEN: ${{ inputs.github-token }}
-      run: |
-        # download tarball to the temp dir
-        ./download-bats-lib.sh  'bats-core/bats-file'  "$VERSION"  "$TEMPDIR"
-        # install from source
-        cd "${TEMPDIR}"
-        mkdir -p "${DESTDIR}/src/"
-        install -m755 load.bash "${DESTDIR}/load.bash"
-        for fn in src/*.bash; do
-          install -m755 "$fn" \
-             "${DESTDIR}/src/$(basename "$fn")"
-        done
-        rm -rf "${TEMPDIR}"
-        echo "Bats File v$VERSION installed in $DESTDIR"
-
-
-    - name: "Print info"
-      id: info
-      shell: bash
-      env:
-        BATS_VERSION: ${{ steps.bats-version.outputs.version }}
-        SUPPORT_VERSION: ${{ steps.support-version.outputs.version }}
-        ASSERT_VERSION: ${{ steps.assert-version.outputs.version }}
-        DETIK_VERSION: ${{ steps.detik-version.outputs.version }}
-        FILE_VERSION: ${{ steps.file-version.outputs.version }}
-      run: |
-        echo "Bats version: $BATS_VERSION"
-        echo "Support version: $SUPPORT_VERSION"
-        echo "Assert version: $ASSERT_VERSION"
-        echo "Detik version: $DETIK_VERSION"
-        echo "File version: $FILE_VERSION"
-        echo "Assert installed: ${{ (steps.assert-install.outputs.assert-installed != '') }}"
-        echo "Detik installed: ${{ (steps.detik-install.outputs.detik-installed != '') }}"
-        echo "File installed: ${{ (steps.file-install.outputs.file-installed != '') }}"
+        INSTALL_PATH: ${{ steps.config.outputs.install-path }}
+      run: echo "$INSTALL_PATH/bin" >> "$GITHUB_PATH"
