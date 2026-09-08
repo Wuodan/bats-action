@@ -34,14 +34,15 @@ runs:
       run: |
         set -eu
 
+        . "$GITHUB_ACTION_PATH/bats-versions.sh"
         install_path="$HOME/.local/share/bats"
 
         {
-          echo "bats-version=1.14.0"
-          echo "support-version=0.3.0"
-          echo "assert-version=2.2.4"
-          echo "detik-version=1.3.2"
-          echo "file-version=0.4.0"
+          echo "bats-version=$BATS_VERSION"
+          echo "support-version=$SUPPORT_VERSION"
+          echo "assert-version=$ASSERT_VERSION"
+          echo "detik-version=$DETIK_VERSION"
+          echo "file-version=$FILE_VERSION"
           echo "install-path=$install_path"
         } >> "$GITHUB_OUTPUT"
 
@@ -50,11 +51,6 @@ runs:
     - name: Download and install Bats and Bats libraries
       shell: bash
       env:
-        BATS_VERSION: ${{ steps.config.outputs.bats-version }}
-        SUPPORT_VERSION: ${{ steps.config.outputs.support-version }}
-        ASSERT_VERSION: ${{ steps.config.outputs.assert-version }}
-        DETIK_VERSION: ${{ steps.config.outputs.detik-version }}
-        FILE_VERSION: ${{ steps.config.outputs.file-version }}
         INSTALL_PATH: ${{ steps.config.outputs.install-path }}
       run: '"$GITHUB_ACTION_PATH/install-bats.sh"'
 
