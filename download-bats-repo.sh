@@ -9,10 +9,22 @@ tempdir="${4:?Usage: $0 <repo> <version> <sha256> <target-directory>}"
 url="https://github.com/${repo}/archive/refs/tags/v${version}.tar.gz"
 archive="${tempdir}.tar.gz"
 
+declare -a curl_args=(
+  --fail
+  --silent
+  --show-error
+  --location
+  --retry 4
+  --retry-connrefused
+)
+
+if [ -n "${GITHUB_TOKEN:-}" ]; then
+  curl_args+=(--header "Authorization: Bearer $GITHUB_TOKEN")
+fi
+
 echo "Downloading $url to $tempdir" >&2
 mkdir -p "$(dirname "$archive")"
-curl --fail --silent --show-error --location \
-  --retry 4 --retry-connrefused --output "$archive" "$url"
+curl "${curl_args[@]}" --output "$archive" "$url"
 
 if command -v sha256sum >/dev/null; then
   actual_sha256="$(sha256sum "$archive")"
