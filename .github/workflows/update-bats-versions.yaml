@@ -36,7 +36,7 @@ jobs:
       - name: Update versions and checksums
         env:
           GITHUB_TOKEN: ${{ github.token }}
-        run: ./update-bats-versions.sh "$GITHUB_REPOSITORY_OWNER"
+        run: ./update-bats-versions.sh
 
       - name: Check for updates
         id: updates
