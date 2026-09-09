@@ -20,6 +20,7 @@ jobs:
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v4
 
       - name: Set branch names
+        id: branches
         shell: bash
         env:
           DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
@@ -30,98 +31,23 @@ jobs:
             target_branch="$DEFAULT_BRANCH"
           fi
 
-          echo "TARGET_BRANCH=$target_branch" >> "$GITHUB_ENV"
-          echo "UPDATE_BRANCH=update-bats-versions/$target_branch" >> "$GITHUB_ENV"
+          echo "target=$target_branch" >> "$GITHUB_OUTPUT"
+          echo "update=update-bats-versions/$target_branch" >> "$GITHUB_OUTPUT"
 
       - name: Update versions and checksums
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: ./update-bats-versions.sh
 
-      - name: Check for updates
-        id: updates
-        shell: bash
-        run: |
-          if git diff --quiet -- bats-versions.sh; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Commit updates
-        if: steps.updates.outputs.changed == 'true'
-        shell: bash
-        run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git switch -c "$UPDATE_BRANCH"
-          git add bats-versions.sh
-          git commit -m "Update Bats repository versions"
-
-      - name: Find existing update pull request
-        id: existing-pr
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          pull_request="$(gh pr list --state open \
-            --base "$TARGET_BRANCH" \
-            --head "$UPDATE_BRANCH" \
-            --search "\"$UPDATE_PR_TITLE\" in:title" \
-            --json number --jq '.[].number')"
-
-          case "$pull_request" in
-            "")
-              echo "exists=false" >> "$GITHUB_OUTPUT"
-              ;;
-            *$'\n'*)
-              echo "Found multiple matching update pull requests" >&2
-              exit 1
-              ;;
-            *)
-              echo "exists=true" >> "$GITHUB_OUTPUT"
-              echo "number=$pull_request" >> "$GITHUB_OUTPUT"
-              ;;
-          esac
-
-      - name: Compare with existing pull request
-        if: steps.updates.outputs.changed == 'true' && steps.existing-pr.outputs.exists == 'true'
-        id: compare-pr
-        shell: bash
-        run: |
-          git fetch origin \
-            "refs/heads/$UPDATE_BRANCH:refs/remotes/origin/$UPDATE_BRANCH"
-          if git diff --quiet "refs/remotes/origin/$UPDATE_BRANCH" \
-            -- bats-versions.sh; then
-            echo "matches=true" >> "$GITHUB_OUTPUT"
-          else
-            echo "matches=false" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Push updates
-        if: steps.updates.outputs.changed == 'true' && steps.compare-pr.outputs.matches != 'true'
-        shell: bash
-        run: git push --force origin "HEAD:refs/heads/$UPDATE_BRANCH"
-
       - name: Create pull request
-        if: steps.updates.outputs.changed == 'true' && steps.existing-pr.outputs.exists == 'false'
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh pr create \
-            --base "$TARGET_BRANCH" \
-            --head "$UPDATE_BRANCH" \
-            --title "$UPDATE_PR_TITLE" \
-            --body "Updates Bats repositories to their latest release tags and refreshes their SHA-256 checksums."
-
-      - name: Close obsolete pull request
-        if: steps.updates.outputs.changed == 'false' && steps.existing-pr.outputs.exists == 'true'
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-          UPDATE_PR_NUMBER: ${{ steps.existing-pr.outputs.number }}
-        run: |
-          gh pr close "$UPDATE_PR_NUMBER" \
-            --delete-branch \
-            --comment "Closing because all Bats repository versions and checksums are current on $TARGET_BRANCH."
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8.1.1
+        with:
+          token: ${{ github.token }}
+          sign-commits: true
+          commit-message: ${{ env.UPDATE_PR_TITLE }}
+          branch: ${{ steps.branches.outputs.update }}
+          delete-branch: true
+          base: ${{ steps.branches.outputs.target }}
+          title: ${{ env.UPDATE_PR_TITLE }}
+          body: Updates Bats repositories to their latest release tags and refreshes their SHA-256 checksums.
+          add-paths: bats-versions.sh
