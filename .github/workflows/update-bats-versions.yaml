@@ -101,17 +101,7 @@ jobs:
       - name: Push updates
         if: steps.updates.outputs.changed == 'true' && steps.compare-pr.outputs.matches != 'true'
         shell: bash
-        env:
-          UPDATE_PR_EXISTS: ${{ steps.existing-pr.outputs.exists }}
-        run: |
-          if [ "$UPDATE_PR_EXISTS" = true ]; then
-            expected_commit="$(git rev-parse "refs/remotes/origin/$UPDATE_BRANCH")"
-            git push \
-              --force-with-lease="refs/heads/$UPDATE_BRANCH:$expected_commit" \
-              origin "HEAD:refs/heads/$UPDATE_BRANCH"
-          else
-            git push origin "HEAD:refs/heads/$UPDATE_BRANCH"
-          fi
+        run: git push --force origin "HEAD:refs/heads/$UPDATE_BRANCH"
 
       - name: Create pull request
         if: steps.updates.outputs.changed == 'true' && steps.existing-pr.outputs.exists == 'false'
