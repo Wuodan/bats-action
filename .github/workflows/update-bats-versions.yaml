@@ -48,6 +48,16 @@ jobs:
             echo "changed=true" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Commit updates
+        if: steps.updates.outputs.changed == 'true'
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git switch -c "$UPDATE_BRANCH"
+          git add bats-versions.sh
+          git commit -m "Update Bats repository versions"
+
       - name: Find existing update pull request
         id: existing-pr
         shell: bash
@@ -74,25 +84,27 @@ jobs:
               ;;
           esac
 
-      - name: Commit updates
-        if: steps.updates.outputs.changed == 'true'
+      - name: Compare with existing pull request
+        if: steps.updates.outputs.changed == 'true' && steps.existing-pr.outputs.exists == 'true'
+        id: compare-pr
         shell: bash
         run: |
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git switch -c "$UPDATE_BRANCH"
-          git add bats-versions.sh
-          git commit -m "Update Bats repository versions"
+          git fetch origin \
+            "refs/heads/$UPDATE_BRANCH:refs/remotes/origin/$UPDATE_BRANCH"
+          if git diff --quiet "refs/remotes/origin/$UPDATE_BRANCH" \
+            -- bats-versions.sh; then
+            echo "matches=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "matches=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Push updates
-        if: steps.updates.outputs.changed == 'true'
+        if: steps.updates.outputs.changed == 'true' && steps.compare-pr.outputs.matches != 'true'
         shell: bash
         env:
           UPDATE_PR_EXISTS: ${{ steps.existing-pr.outputs.exists }}
         run: |
           if [ "$UPDATE_PR_EXISTS" = true ]; then
-            git fetch origin \
-              "refs/heads/$UPDATE_BRANCH:refs/remotes/origin/$UPDATE_BRANCH"
             expected_commit="$(git rev-parse "refs/remotes/origin/$UPDATE_BRANCH")"
             git push \
               --force-with-lease="refs/heads/$UPDATE_BRANCH:$expected_commit" \
