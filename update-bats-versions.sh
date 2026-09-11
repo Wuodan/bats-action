@@ -58,10 +58,10 @@ update_repository() {
   echo "$repo: $version" >&2
 }
 
-update_repository "bats-core/bats-core" BATS_VERSION BATS_SHA256
-update_repository "bats-core/bats-support" SUPPORT_VERSION SUPPORT_SHA256
-update_repository "bats-core/bats-assert" ASSERT_VERSION ASSERT_SHA256
-update_repository "bats-core/bats-detik" DETIK_VERSION DETIK_SHA256
-update_repository "bats-core/bats-file" FILE_VERSION FILE_SHA256
+update_repository "bats-hardened/bats-core" BATS_VERSION BATS_SHA256
+update_repository "bats-hardened/bats-support" SUPPORT_VERSION SUPPORT_SHA256
+update_repository "bats-hardened/bats-assert" ASSERT_VERSION ASSERT_SHA256
+update_repository "bats-hardened/bats-detik" DETIK_VERSION DETIK_SHA256
+update_repository "bats-hardened/bats-file" FILE_VERSION FILE_SHA256
 
 rmdir "$temp_dir"
