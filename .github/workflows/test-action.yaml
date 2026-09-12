@@ -1,18 +1,18 @@
 name: Test action
 
 on:
+  workflow_call:
   workflow_dispatch:
   pull_request:
-  release:
-    types: [published]
   push:
     branches:
       - "**"
       - "!dependabot/**"
-    tags: ["*"]
 
-# Group runs by workflow and PR/ref; release-triggered runs use a separate
-# `-release` suffix. Cancel an older run when a new one uses the same group.
+permissions:
+  contents: read
+
+# Group runs by workflow and PR/ref. Cancel an older run when a new one uses the same group.
 concurrency:
   group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}${{ github.event_name == 'release' && '-release' || '' }}
   cancel-in-progress: true
