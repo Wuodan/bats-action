@@ -1,0 +1,23 @@
+{
+  "version": "0.2",
+  "language": "en",
+  "ignorePaths": ["**/.git/**"],
+  "words": [
+    "BATSLIB",
+    "DETIK",
+    "SARIF",
+    "SCRIPTDIR",
+    "SHFMT",
+    "ZIZMOR",
+    "connrefused",
+    "detik",
+    "devskim",
+    "mktemp",
+    "ossf",
+    "pipefail",
+    "sarif",
+    "shfmt",
+    "subshells",
+    "zizmor"
+  ]
+}
