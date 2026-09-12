@@ -17,7 +17,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v7
       - name: Setup Bats and Bats libraries
         uses: bats-core/bats-action@4.0.0
       - name: Run tests
