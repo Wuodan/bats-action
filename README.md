@@ -35,6 +35,6 @@ bats_load_library bats-detik/detik.bash
 
 ## Outputs
 
-| Key | Description |
-| --- | --- |
+| Key        | Description              |
+|------------|--------------------------|
 | `lib-path` | Bats library search path |
