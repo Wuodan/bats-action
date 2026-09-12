@@ -30,9 +30,9 @@ update_repository() {
 
   release="$(curl "${curl_args[@]}" \
     "https://api.github.com/repos/$repo/releases/latest")"
-  tag="$(printf '%s' "$release" \
-    | sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' \
-    | head -n 1)"
+  tag="$(printf '%s' "$release" |
+    sed -n 's/.*"tag_name"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' |
+    head -n 1)"
 
   case "$tag" in
     v*) version="${tag#v}" ;;
