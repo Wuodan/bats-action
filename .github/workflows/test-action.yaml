@@ -74,3 +74,9 @@ jobs:
       - name: Test action examples
         shell: bash
         run: bats -T -p tests
+
+  super-linter:
+    name: Run Super-Linter
+    uses: bats-hardened/.github/.github/workflows/super-linter.yml@44fd251ecb1b4ca6fd2537eaa65be75b9be0395d # v1.1.1-beta01
+    permissions:
+      contents: read
