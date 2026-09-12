@@ -9,3 +9,14 @@ updates:
       github-actions:
         patterns:
           - "*"
+
+  - package-ecosystem: "pre-commit"
+    directory: "/"
+    schedule:
+      interval: "daily"
+      time: "10:00"
+      timezone: "Etc/UTC"
+    groups:
+      pre-commit:
+        patterns:
+          - "*"
